@@ -1,8 +1,10 @@
 import axios from 'axios'
 import router from '@/router'
+import { getAccessToken, setAuthSession, clearAccessToken } from '@/api/tokenHolder'
 
 const client = axios.create({
   baseURL: '/api',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,12 +24,6 @@ function processQueue(error, token = null) {
   failedQueue = []
 }
 
-function clearSession() {
-  localStorage.removeItem('accessToken')
-  localStorage.removeItem('refreshToken')
-  localStorage.removeItem('user')
-}
-
 function isAuthRequest(url) {
   return url?.includes('/auth/login')
     || url?.includes('/auth/register')
@@ -36,7 +32,7 @@ function isAuthRequest(url) {
 }
 
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken')
+  const token = getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -56,15 +52,6 @@ client.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const refreshToken = localStorage.getItem('refreshToken')
-    if (!refreshToken) {
-      clearSession()
-      if (router.currentRoute.value.meta.requiresAuth) {
-        router.push({ name: 'login' })
-      }
-      return Promise.reject(error)
-    }
-
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject })
@@ -78,19 +65,16 @@ client.interceptors.response.use(
     isRefreshing = true
 
     try {
-      const { data } = await axios.post('/api/auth/refresh', { refreshToken })
+      const { data } = await axios.post('/api/auth/refresh', null, { withCredentials: true })
       const newAccessToken = data.data.accessToken
-      const newRefreshToken = data.data.refreshToken
 
-      localStorage.setItem('accessToken', newAccessToken)
-      localStorage.setItem('refreshToken', newRefreshToken)
-
+      setAuthSession(newAccessToken, data.data.user)
       processQueue(null, newAccessToken)
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
       return client(originalRequest)
     } catch (refreshError) {
       processQueue(refreshError, null)
-      clearSession()
+      clearAccessToken()
       if (router.currentRoute.value.meta.requiresAuth) {
         router.push({ name: 'login' })
       }

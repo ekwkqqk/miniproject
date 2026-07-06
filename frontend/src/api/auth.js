@@ -8,12 +8,12 @@ export function login(payload) {
   return client.post('/auth/login', payload)
 }
 
-export function refresh(refreshToken) {
-  return client.post('/auth/refresh', { refreshToken })
+export function refresh() {
+  return client.post('/auth/refresh')
 }
 
-export function logout(refreshToken) {
-  return client.post('/auth/logout', { refreshToken })
+export function logout() {
+  return client.post('/auth/logout')
 }
 
 export function getMe() {
