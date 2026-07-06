@@ -12,23 +12,20 @@ Vue 3 + Spring Boot 3 기반 풀스택 스타터 프레임워크입니다.
 
 ## 사전 준비
 
-### 1. MySQL
+### 1. PostgreSQL
 
-로컬에 MySQL을 설치한 뒤 데이터베이스를 생성합니다.
-
-```sql
-CREATE DATABASE miniproject CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+로컬 PostgreSQL(포트 5432)에 `postgres` 데이터베이스가 있어야 합니다.
 
 ### 2. 백엔드 DB 설정
 
-[`backend/src/main/resources/application-dev.yml`](backend/src/main/resources/application-dev.yml)에서 MySQL 계정 정보를 수정합니다.
+[`backend/src/main/resources/application-dev.yml`](backend/src/main/resources/application-dev.yml)에서 PostgreSQL 계정 정보를 수정합니다.
 
 ```yaml
 spring:
   datasource:
-    username: root
-    password: your_password
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: admin
 ```
 
 ## 실행 방법

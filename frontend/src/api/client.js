@@ -8,6 +8,33 @@ const client = axios.create({
   },
 })
 
+let isRefreshing = false
+let failedQueue = []
+
+function processQueue(error, token = null) {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error)
+    } else {
+      resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
+function clearSession() {
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('refreshToken')
+  localStorage.removeItem('user')
+}
+
+function isAuthRequest(url) {
+  return url?.includes('/auth/login')
+    || url?.includes('/auth/register')
+    || url?.includes('/auth/refresh')
+    || url?.includes('/auth/logout')
+}
+
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken')
   if (token) {
@@ -18,15 +45,59 @@ client.interceptors.request.use((config) => {
 
 client.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('user')
+  async (error) => {
+    const originalRequest = error.config
+
+    if (error.response?.status !== 401 || !originalRequest || originalRequest._retry) {
+      return Promise.reject(error)
+    }
+
+    if (isAuthRequest(originalRequest.url)) {
+      return Promise.reject(error)
+    }
+
+    const refreshToken = localStorage.getItem('refreshToken')
+    if (!refreshToken) {
+      clearSession()
       if (router.currentRoute.value.meta.requiresAuth) {
         router.push({ name: 'login' })
       }
+      return Promise.reject(error)
     }
-    return Promise.reject(error)
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject })
+      }).then((token) => {
+        originalRequest.headers.Authorization = `Bearer ${token}`
+        return client(originalRequest)
+      })
+    }
+
+    originalRequest._retry = true
+    isRefreshing = true
+
+    try {
+      const { data } = await axios.post('/api/auth/refresh', { refreshToken })
+      const newAccessToken = data.data.accessToken
+      const newRefreshToken = data.data.refreshToken
+
+      localStorage.setItem('accessToken', newAccessToken)
+      localStorage.setItem('refreshToken', newRefreshToken)
+
+      processQueue(null, newAccessToken)
+      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+      return client(originalRequest)
+    } catch (refreshError) {
+      processQueue(refreshError, null)
+      clearSession()
+      if (router.currentRoute.value.meta.requiresAuth) {
+        router.push({ name: 'login' })
+      }
+      return Promise.reject(refreshError)
+    } finally {
+      isRefreshing = false
+    }
   },
 )
 

@@ -72,4 +72,8 @@ public class User {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
+    public void changeRole(Role role) {
+        this.role = role;
+    }
 }

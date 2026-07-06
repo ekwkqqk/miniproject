@@ -22,7 +22,7 @@ onMounted(async () => {
     <p>안녕하세요, <strong>{{ authStore.user?.name }}</strong>님!</p>
     <el-descriptions :column="1" border style="margin-top: 16px">
       <el-descriptions-item label="이메일">{{ authStore.user?.email }}</el-descriptions-item>
-      <el-descriptions-item label="역할">{{ authStore.user?.role }}</el-descriptions-item>
+      <el-descriptions-item label="권한 등급">{{ authStore.user?.roleLabel || authStore.user?.role }}</el-descriptions-item>
       <el-descriptions-item label="가입일">{{ authStore.user?.createdAt }}</el-descriptions-item>
     </el-descriptions>
   </el-card>

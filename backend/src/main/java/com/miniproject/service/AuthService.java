@@ -3,11 +3,13 @@ package com.miniproject.service;
 import com.miniproject.common.BusinessException;
 import com.miniproject.common.ErrorCode;
 import com.miniproject.config.JwtTokenProvider;
+import com.miniproject.domain.RefreshToken;
 import com.miniproject.domain.Role;
 import com.miniproject.domain.User;
 import com.miniproject.domain.UserRepository;
 import com.miniproject.dto.AuthResponse;
 import com.miniproject.dto.LoginRequest;
+import com.miniproject.dto.RefreshTokenRequest;
 import com.miniproject.dto.RegisterRequest;
 import com.miniproject.dto.UserResponse;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,15 +24,18 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
     private final AuthenticationManager authenticationManager;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider jwtTokenProvider,
+                       RefreshTokenService refreshTokenService,
                        AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.refreshTokenService = refreshTokenService;
         this.authenticationManager = authenticationManager;
     }
 
@@ -47,10 +52,10 @@ public class AuthService {
                 Role.USER
         );
         User savedUser = userRepository.save(user);
-        String token = jwtTokenProvider.generateToken(savedUser.getEmail(), savedUser.getRole().name());
-        return new AuthResponse(token, UserResponse.from(savedUser));
+        return createAuthResponse(savedUser);
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -59,7 +64,26 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."));
 
-        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
-        return new AuthResponse(token, UserResponse.from(user));
+        return createAuthResponse(user);
+    }
+
+    @Transactional
+    public AuthResponse refresh(RefreshTokenRequest request) {
+        RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request.getRefreshToken());
+        User user = refreshToken.getUser();
+
+        refreshTokenService.revoke(refreshToken);
+        return createAuthResponse(user);
+    }
+
+    @Transactional
+    public void logout(RefreshTokenRequest request) {
+        refreshTokenService.revokeByToken(request.getRefreshToken());
+    }
+
+    private AuthResponse createAuthResponse(User user) {
+        String accessToken = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
+        String refreshToken = refreshTokenService.createRefreshToken(user);
+        return new AuthResponse(accessToken, refreshToken, UserResponse.from(user));
     }
 }

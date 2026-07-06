@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { canAccessAdmin, canAccessSpecial } from '@/utils/roles'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,18 @@ const router = createRouter({
           name: 'dashboard',
           component: () => import('@/views/DashboardView.vue'),
         },
+        {
+          path: 'special',
+          name: 'special',
+          component: () => import('@/views/SpecialView.vue'),
+          meta: { requiresSpecial: true },
+        },
+        {
+          path: 'admin/users',
+          name: 'admin-users',
+          component: () => import('@/views/AdminUsersView.vue'),
+          meta: { requiresAdmin: true },
+        },
       ],
     },
   ],
@@ -39,6 +52,14 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
+    return { name: 'dashboard' }
+  }
+
+  if (to.meta.requiresAdmin && !canAccessAdmin(authStore.user)) {
+    return { name: 'dashboard' }
+  }
+
+  if (to.meta.requiresSpecial && !canAccessSpecial(authStore.user)) {
     return { name: 'dashboard' }
   }
 

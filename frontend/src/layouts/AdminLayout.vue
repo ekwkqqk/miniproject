@@ -2,16 +2,19 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { House, User } from '@element-plus/icons-vue'
+import { canAccessAdmin, canAccessSpecial } from '@/utils/roles'
+import { House, User, Star, Setting } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
 const activeMenu = computed(() => route.path)
+const showSpecialMenu = computed(() => canAccessSpecial(authStore.user))
+const showAdminMenu = computed(() => canAccessAdmin(authStore.user))
 
-function handleLogout() {
-  authStore.logout()
+async function handleLogout() {
+  await authStore.logout()
   router.push({ name: 'login' })
 }
 </script>
@@ -24,6 +27,14 @@ function handleLogout() {
         <el-menu-item index="/">
           <el-icon><House /></el-icon>
           <span>대시보드</span>
+        </el-menu-item>
+        <el-menu-item v-if="showSpecialMenu" index="/special">
+          <el-icon><Star /></el-icon>
+          <span>특별 사용자</span>
+        </el-menu-item>
+        <el-menu-item v-if="showAdminMenu" index="/admin/users">
+          <el-icon><Setting /></el-icon>
+          <span>권한 관리</span>
         </el-menu-item>
       </el-menu>
     </el-aside>

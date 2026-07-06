@@ -11,13 +11,15 @@ public class UserResponse {
     private final String email;
     private final String name;
     private final Role role;
+    private final String roleLabel;
     private final LocalDateTime createdAt;
 
-    public UserResponse(Long id, String email, String name, Role role, LocalDateTime createdAt) {
+    public UserResponse(Long id, String email, String name, Role role, String roleLabel, LocalDateTime createdAt) {
         this.id = id;
         this.email = email;
         this.name = name;
         this.role = role;
+        this.roleLabel = roleLabel;
         this.createdAt = createdAt;
     }
 
@@ -27,6 +29,7 @@ public class UserResponse {
                 user.getEmail(),
                 user.getName(),
                 user.getRole(),
+                user.getRole().getDisplayName(),
                 user.getCreatedAt()
         );
     }
@@ -45,6 +48,10 @@ public class UserResponse {
 
     public Role getRole() {
         return role;
+    }
+
+    public String getRoleLabel() {
+        return roleLabel;
     }
 
     public LocalDateTime getCreatedAt() {

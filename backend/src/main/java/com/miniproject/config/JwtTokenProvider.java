@@ -22,7 +22,7 @@ public class JwtTokenProvider {
 
     public String generateToken(String email, String role) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + jwtProperties.getExpirationMs());
+        Date expiry = new Date(now.getTime() + jwtProperties.getAccessExpirationMs());
 
         return Jwts.builder()
                 .subject(email)

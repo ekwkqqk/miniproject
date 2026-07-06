@@ -5,21 +5,26 @@ import { getErrorMessage } from '@/api/client'
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref(localStorage.getItem('accessToken') || '')
+  const refreshToken = ref(localStorage.getItem('refreshToken') || '')
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
 
-  const isAuthenticated = computed(() => !!accessToken.value)
+  const isAuthenticated = computed(() => !!refreshToken.value)
 
-  function setSession(token, userData) {
-    accessToken.value = token
+  function setSession(tokens, userData) {
+    accessToken.value = tokens.accessToken
+    refreshToken.value = tokens.refreshToken
     user.value = userData
-    localStorage.setItem('accessToken', token)
+    localStorage.setItem('accessToken', tokens.accessToken)
+    localStorage.setItem('refreshToken', tokens.refreshToken)
     localStorage.setItem('user', JSON.stringify(userData))
   }
 
   function clearSession() {
     accessToken.value = ''
+    refreshToken.value = ''
     user.value = null
     localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
   }
 
@@ -27,7 +32,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data } = await authApi.register(payload)
       if (data.success) {
-        setSession(data.data.accessToken, data.data.user)
+        setSession(data.data, data.data.user)
       }
       return data
     } catch (error) {
@@ -39,7 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data } = await authApi.login(payload)
       if (data.success) {
-        setSession(data.data.accessToken, data.data.user)
+        setSession(data.data, data.data.user)
       }
       return data
     } catch (error) {
@@ -61,12 +66,21 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout() {
+  async function logout() {
+    const token = refreshToken.value || localStorage.getItem('refreshToken')
+    if (token) {
+      try {
+        await authApi.logout(token)
+      } catch {
+        // 서버 폐기 실패해도 클라이언트 세션은 제거
+      }
+    }
     clearSession()
   }
 
   return {
     accessToken,
+    refreshToken,
     user,
     isAuthenticated,
     register,
