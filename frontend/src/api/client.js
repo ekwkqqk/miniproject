@@ -31,6 +31,12 @@ function isAuthRequest(url) {
     || url?.includes('/auth/logout')
 }
 
+function goToErrorPage(name) {
+  if (router.currentRoute.value.name !== name) {
+    router.push({ name })
+  }
+}
+
 client.interceptors.request.use((config) => {
   const token = getAccessToken()
   if (token) {
@@ -43,8 +49,14 @@ client.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
+    const status = error.response?.status
 
-    if (error.response?.status !== 401 || !originalRequest || originalRequest._retry) {
+    if (status === 403) {
+      goToErrorPage('forbidden')
+      return Promise.reject(error)
+    }
+
+    if (status !== 401 || !originalRequest || originalRequest._retry) {
       return Promise.reject(error)
     }
 
@@ -75,9 +87,7 @@ client.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null)
       clearAccessToken()
-      if (router.currentRoute.value.meta.requiresAuth) {
-        router.push({ name: 'login' })
-      }
+      goToErrorPage('unauthorized')
       return Promise.reject(refreshError)
     } finally {
       isRefreshing = false

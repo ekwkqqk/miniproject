@@ -18,6 +18,18 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
+      path: '/unauthorized',
+      name: 'unauthorized',
+      component: () => import('@/views/UnauthorizedView.vue'),
+      meta: { errorPage: true },
+    },
+    {
+      path: '/forbidden',
+      name: 'forbidden',
+      component: () => import('@/views/ForbiddenView.vue'),
+      meta: { errorPage: true },
+    },
+    {
       path: '/',
       component: () => import('@/layouts/AdminLayout.vue'),
       meta: { requiresAuth: true },
@@ -41,6 +53,12 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue'),
+      meta: { errorPage: true },
+    },
   ],
 })
 
@@ -52,7 +70,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'login' }
+    return { name: 'unauthorized' }
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
@@ -60,11 +78,11 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresAdmin && !canAccessAdmin(authStore.user)) {
-    return { name: 'dashboard' }
+    return { name: 'forbidden' }
   }
 
   if (to.meta.requiresSpecial && !canAccessSpecial(authStore.user)) {
-    return { name: 'dashboard' }
+    return { name: 'forbidden' }
   }
 
   return true
