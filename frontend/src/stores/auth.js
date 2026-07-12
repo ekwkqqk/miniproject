@@ -8,6 +8,7 @@ import {
   clearAccessToken,
   subscribeAuthListener,
 } from '@/api/tokenHolder'
+import { useMenuStore } from '@/stores/menu'
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref(getAccessToken())
@@ -22,6 +23,9 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   const isAuthenticated = computed(() => !!accessToken.value)
+  const isSystemAdmin = computed(() =>
+    user.value?.roles?.some((role) => role.code === 'SYSTEM_ADMIN') ?? false
+  )
 
   function setSession(data) {
     setAuthSession(data.accessToken, data.user)
@@ -33,6 +37,7 @@ export const useAuthStore = defineStore('auth', () => {
     clearAccessToken()
     accessToken.value = ''
     user.value = null
+    useMenuStore().clearMenus()
   }
 
   async function restoreSession() {
@@ -44,6 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await authApi.refresh()
       if (data.success) {
         setSession(data.data)
+        await useMenuStore().fetchMyMenus()
       }
     } catch {
       clearSession()
@@ -59,6 +65,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await authApi.register(payload)
       if (data.success) {
         setSession(data.data)
+        await useMenuStore().fetchMyMenus()
       }
       return data
     } catch (error) {
@@ -71,6 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await authApi.login(payload)
       if (data.success) {
         setSession(data.data)
+        await useMenuStore().fetchMyMenus()
       }
       return data
     } catch (error) {
@@ -95,7 +103,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await authApi.logout()
     } catch {
-      // 서버 폐기 실패해도 클라이언트 세션은 제거
+      // ignore
     }
     clearSession()
     sessionReady.value = true
@@ -106,6 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     sessionReady,
     isAuthenticated,
+    isSystemAdmin,
     restoreSession,
     register,
     login,

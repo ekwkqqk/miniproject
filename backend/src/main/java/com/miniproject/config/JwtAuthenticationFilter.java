@@ -1,5 +1,7 @@
 package com.miniproject.config;
 
+import com.miniproject.domain.Role;
+import com.miniproject.domain.UserRoleRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,9 +20,11 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRoleRepository userRoleRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserRoleRepository userRoleRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userRoleRepository = userRoleRepository;
     }
 
     @Override
@@ -30,11 +34,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
             String email = jwtTokenProvider.getEmail(token);
-            String role = jwtTokenProvider.getRole(token);
+            List<SimpleGrantedAuthority> authorities = userRoleRepository.findRolesByUserEmail(email).stream()
+                    .map(Role::getCode)
+                    .map(code -> new SimpleGrantedAuthority("ROLE_" + code))
+                    .toList();
+
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     email,
                     null,
-                    List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                    authorities
             );
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);

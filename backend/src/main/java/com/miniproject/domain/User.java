@@ -2,8 +2,6 @@ package com.miniproject.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,21 +29,16 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     protected User() {
     }
 
-    public User(String email, String password, String name, Role role) {
+    public User(String email, String password, String name) {
         this.email = email;
         this.password = password;
         this.name = name;
-        this.role = role;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -65,15 +58,7 @@ public class User {
         return name;
     }
 
-    public Role getRole() {
-        return role;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
-    }
-
-    public void changeRole(Role role) {
-        this.role = role;
     }
 }

@@ -6,3 +6,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+
+# 운영 환경에서는 Swagger / OpenAPI 문서 비활성화
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

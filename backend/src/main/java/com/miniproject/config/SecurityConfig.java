@@ -1,12 +1,12 @@
 package com.miniproject.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -23,17 +23,29 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
+    private static final String[] SWAGGER_PATHS = {
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**"
+    };
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final SystemAdminApiFilter systemAdminApiFilter;
     private final SecurityErrorHandler securityErrorHandler;
+    private final boolean swaggerEnabled;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          SecurityErrorHandler securityErrorHandler) {
+                          SystemAdminApiFilter systemAdminApiFilter,
+                          SecurityErrorHandler securityErrorHandler,
+                          @Value("${springdoc.swagger-ui.enabled:true}") boolean swaggerEnabled) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.systemAdminApiFilter = systemAdminApiFilter;
         this.securityErrorHandler = securityErrorHandler;
+        this.swaggerEnabled = swaggerEnabled;
     }
 
     @Bean
@@ -42,17 +54,22 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/health").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers("/api/auth/**", "/api/health").permitAll();
+                    if (swaggerEnabled) {
+                        auth.requestMatchers(SWAGGER_PATHS).permitAll();
+                    } else {
+                        auth.requestMatchers(SWAGGER_PATHS).denyAll();
+                    }
+                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                            .anyRequest().authenticated();
+                })
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(securityErrorHandler)
                         .accessDeniedHandler(securityErrorHandler)
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(systemAdminApiFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

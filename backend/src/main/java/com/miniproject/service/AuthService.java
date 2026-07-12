@@ -7,9 +7,12 @@ import com.miniproject.domain.RefreshToken;
 import com.miniproject.domain.Role;
 import com.miniproject.domain.User;
 import com.miniproject.domain.UserRepository;
+import com.miniproject.domain.UserRole;
+import com.miniproject.domain.UserRoleRepository;
 import com.miniproject.dto.AuthTokens;
 import com.miniproject.dto.LoginRequest;
 import com.miniproject.dto.RegisterRequest;
+import com.miniproject.dto.RoleResponse;
 import com.miniproject.dto.UserResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,24 +20,32 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
+    private final RoleService roleService;
     private final AuthenticationManager authenticationManager;
 
     public AuthService(UserRepository userRepository,
+                       UserRoleRepository userRoleRepository,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider jwtTokenProvider,
                        RefreshTokenService refreshTokenService,
+                       RoleService roleService,
                        AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
+        this.userRoleRepository = userRoleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.refreshTokenService = refreshTokenService;
+        this.roleService = roleService;
         this.authenticationManager = authenticationManager;
     }
 
@@ -47,10 +58,11 @@ public class AuthService {
         User user = new User(
                 request.getEmail(),
                 passwordEncoder.encode(request.getPassword()),
-                request.getName(),
-                Role.USER
+                request.getName()
         );
         User savedUser = userRepository.save(user);
+        Role defaultRole = roleService.getByCode(RoleService.USER_CODE);
+        userRoleRepository.save(new UserRole(savedUser, defaultRole));
         return createAuthTokens(savedUser);
     }
 
@@ -81,8 +93,16 @@ public class AuthService {
     }
 
     private AuthTokens createAuthTokens(User user) {
-        String accessToken = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
+        String accessToken = jwtTokenProvider.generateToken(user.getEmail());
         String refreshToken = refreshTokenService.createRefreshToken(user);
-        return new AuthTokens(accessToken, refreshToken, UserResponse.from(user));
+        return new AuthTokens(accessToken, refreshToken, toUserResponse(user));
+    }
+
+    private UserResponse toUserResponse(User user) {
+        List<RoleResponse> roles = userRoleRepository.findByUserId(user.getId()).stream()
+                .map(UserRole::getRole)
+                .map(RoleResponse::from)
+                .toList();
+        return new UserResponse(user.getId(), user.getEmail(), user.getName(), roles, user.getCreatedAt());
     }
 }

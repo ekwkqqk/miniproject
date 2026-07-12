@@ -87,7 +87,9 @@ client.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null)
       clearAccessToken()
-      goToErrorPage('unauthorized')
+      if (router.currentRoute.value.name !== 'login') {
+        router.push({ name: 'login' })
+      }
       return Promise.reject(refreshError)
     } finally {
       isRefreshing = false

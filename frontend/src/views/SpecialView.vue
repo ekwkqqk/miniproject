@@ -1,34 +1,19 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import * as specialApi from '@/api/special'
-import { ElMessage } from 'element-plus'
+import { useMenuAuth } from '@/composables/useMenuAuth'
 
-const info = ref(null)
-const loading = ref(false)
-
-onMounted(async () => {
-  loading.value = true
-  try {
-    const { data } = await specialApi.getSpecialInfo()
-    if (data.success) {
-      info.value = data.data
-    }
-  } catch (error) {
-    ElMessage.error(error.response?.data?.message || error.message)
-  } finally {
-    loading.value = false
-  }
-})
+const { canRead, canUpdate, canDelete } = useMenuAuth()
 </script>
 
 <template>
-  <el-card v-loading="loading">
+  <el-card>
     <template #header>
       <span>특별 사용자 영역</span>
     </template>
-    <template v-if="info">
-      <h3>{{ info.title }}</h3>
-      <p>{{ info.message }}</p>
-    </template>
+    <p>메뉴 Role이 있는 사용자만 접근할 수 있습니다.</p>
+    <div style="margin-top: 16px">
+      <el-button v-if="canRead" type="info">조회</el-button>
+      <el-button v-if="canUpdate" type="primary">수정</el-button>
+      <el-button v-if="canDelete" type="danger">삭제</el-button>
+    </div>
   </el-card>
 </template>

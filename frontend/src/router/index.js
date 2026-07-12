@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { canAccessAdmin, canAccessSpecial } from '@/utils/roles'
+import { useMenuStore } from '@/stores/menu'
+import { useI18nStore } from '@/stores/i18n'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,13 +44,43 @@ const router = createRouter({
           path: 'special',
           name: 'special',
           component: () => import('@/views/SpecialView.vue'),
-          meta: { requiresSpecial: true },
+          meta: { requiresMenu: true },
         },
         {
           path: 'admin/users',
           name: 'admin-users',
           component: () => import('@/views/AdminUsersView.vue'),
-          meta: { requiresAdmin: true },
+          meta: { requiresMenu: true },
+        },
+        {
+          path: 'admin/roles',
+          name: 'admin-roles',
+          component: () => import('@/views/AdminRolesView.vue'),
+          meta: { requiresMenu: true },
+        },
+        {
+          path: 'admin/menus',
+          name: 'admin-menus',
+          component: () => import('@/views/AdminMenusView.vue'),
+          meta: { requiresMenu: true },
+        },
+        {
+          path: 'admin/i18n/locales',
+          name: 'admin-i18n-locales',
+          component: () => import('@/views/AdminI18nLocalesView.vue'),
+          meta: { requiresMenu: true },
+        },
+        {
+          path: 'admin/i18n/groups',
+          name: 'admin-i18n-groups',
+          component: () => import('@/views/AdminI18nGroupsView.vue'),
+          meta: { requiresMenu: true },
+        },
+        {
+          path: 'admin/i18n/messages',
+          name: 'admin-i18n-messages',
+          component: () => import('@/views/AdminI18nMessagesView.vue'),
+          meta: { requiresMenu: true },
         },
       ],
     },
@@ -64,24 +95,43 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
+  const menuStore = useMenuStore()
 
   if (to.meta.requiresAuth || to.meta.guestOnly) {
     await authStore.restoreSession()
   }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return { name: 'unauthorized' }
+    return { name: 'login' }
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
     return { name: 'dashboard' }
   }
 
-  if (to.meta.requiresAdmin && !canAccessAdmin(authStore.user)) {
-    return { name: 'forbidden' }
+  if (to.meta.requiresAuth && authStore.isAuthenticated && !menuStore.loaded) {
+    try {
+      await menuStore.fetchMyMenus()
+    } catch {
+      // ignore
+    }
   }
 
-  if (to.meta.requiresSpecial && !canAccessSpecial(authStore.user)) {
+  if (to.meta.requiresAuth && authStore.isAuthenticated) {
+    const i18nStore = useI18nStore()
+    try {
+      if (!i18nStore.locales.length) {
+        await i18nStore.loadLocales()
+      }
+      if (!i18nStore.loaded) {
+        await i18nStore.loadMessages()
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (to.meta.requiresMenu && !menuStore.canAccess(to.path)) {
     return { name: 'forbidden' }
   }
 

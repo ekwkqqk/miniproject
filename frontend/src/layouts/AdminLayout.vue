@@ -2,46 +2,58 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { canAccessAdmin, canAccessSpecial } from '@/utils/roles'
-import { House, User, Star, Setting } from '@element-plus/icons-vue'
+import { useMenuStore } from '@/stores/menu'
+import { useI18n } from '@/composables/useI18n'
+import { User } from '@element-plus/icons-vue'
+import SidebarMenuNode from '@/components/SidebarMenuNode.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const menuStore = useMenuStore()
+const { locale, locales, setLocale } = useI18n()
 
 const activeMenu = computed(() => route.path)
-const showSpecialMenu = computed(() => canAccessSpecial(authStore.user))
-const showAdminMenu = computed(() => canAccessAdmin(authStore.user))
 
 async function handleLogout() {
   await authStore.logout()
   router.push({ name: 'login' })
 }
+
+async function onLocaleChange(code) {
+  await setLocale(code)
+}
 </script>
 
 <template>
   <el-container class="layout">
-    <el-aside width="220px" class="sidebar">
+    <el-aside width="240px" class="sidebar">
       <div class="logo">miniproject</div>
-      <el-menu :default-active="activeMenu" router>
-        <el-menu-item index="/">
-          <el-icon><House /></el-icon>
-          <span>대시보드</span>
-        </el-menu-item>
-        <el-menu-item v-if="showSpecialMenu" index="/special">
-          <el-icon><Star /></el-icon>
-          <span>특별 사용자</span>
-        </el-menu-item>
-        <el-menu-item v-if="showAdminMenu" index="/admin/users">
-          <el-icon><Setting /></el-icon>
-          <span>권한 관리</span>
-        </el-menu-item>
+      <el-menu :default-active="activeMenu" router unique-opened>
+        <SidebarMenuNode
+          v-for="menu in menuStore.menus"
+          :key="menu.id"
+          :menu="menu"
+        />
       </el-menu>
     </el-aside>
 
     <el-container>
       <el-header class="header">
         <div class="header-right">
+          <el-select
+            v-model="locale"
+            size="small"
+            style="width: 120px"
+            @change="onLocaleChange"
+          >
+            <el-option
+              v-for="item in locales"
+              :key="item.code"
+              :label="item.name"
+              :value="item.code"
+            />
+          </el-select>
           <el-icon><User /></el-icon>
           <span>{{ authStore.user?.name || '사용자' }}</span>
           <el-button type="danger" link @click="handleLogout">로그아웃</el-button>
@@ -88,5 +100,20 @@ async function handleLogout() {
 
 .main {
   background: #f5f7fa;
+}
+
+:deep(.el-menu) {
+  border-right: none;
+  background: transparent;
+}
+
+:deep(.el-menu-item),
+:deep(.el-sub-menu__title) {
+  color: #d3dce6;
+}
+
+:deep(.el-menu-item.is-active) {
+  background: #263445 !important;
+  color: #fff;
 }
 </style>
