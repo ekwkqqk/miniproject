@@ -29,6 +29,7 @@ function isAuthRequest(url) {
     || url?.includes('/auth/register')
     || url?.includes('/auth/refresh')
     || url?.includes('/auth/logout')
+    || url?.includes('/auth/change-password')
 }
 
 function goToErrorPage(name) {
@@ -99,6 +100,10 @@ client.interceptors.response.use(
 
 export function getErrorMessage(error) {
   return error.response?.data?.message || error.message || '요청 처리 중 오류가 발생했습니다.'
+}
+
+export function getErrorCode(error) {
+  return error.response?.data?.errorCode || null
 }
 
 export default client

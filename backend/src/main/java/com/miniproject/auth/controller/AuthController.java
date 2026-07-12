@@ -6,6 +6,7 @@ import com.miniproject.common.ErrorCode;
 import com.miniproject.auth.service.RefreshTokenCookieService;
 import com.miniproject.auth.dto.AuthResponse;
 import com.miniproject.auth.dto.AuthTokens;
+import com.miniproject.auth.dto.ChangePasswordRequest;
 import com.miniproject.auth.dto.LoginRequest;
 import com.miniproject.auth.dto.RegisterRequest;
 import com.miniproject.auth.service.AuthService;
@@ -53,6 +54,12 @@ public class AuthController {
         refreshTokenCookieService.getRefreshToken(request).ifPresent(authService::logout);
         refreshTokenCookieService.clearRefreshTokenCookie(response);
         return ApiResponse.success("로그아웃되었습니다.");
+    }
+
+    @PostMapping("/change-password")
+    public ApiResponse<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(request);
+        return ApiResponse.success("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.");
     }
 
     private AuthResponse issueTokens(AuthTokens tokens, HttpServletResponse response) {

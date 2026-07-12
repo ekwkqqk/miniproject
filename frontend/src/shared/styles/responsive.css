@@ -1,0 +1,296 @@
+/* Breakpoints: mobile <768 | tablet 768–1023 | desktop ≥1024 */
+
+:root {
+  --bp-mobile-max: 767px;
+  --bp-tablet-min: 768px;
+  --bp-tablet-max: 1023px;
+  --bp-desktop-min: 1024px;
+  --app-header-height: 56px;
+  --app-sidebar-width: 240px;
+  --page-padding: 20px;
+  --page-gap: 16px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --page-padding: 12px;
+    --page-gap: 12px;
+  }
+}
+
+/* Page shell */
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-gap);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.page-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.page-toolbar__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.page-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Search / filter panels */
+.filter-panel {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+@media (max-width: 1023px) {
+  .filter-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .filter-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.filter-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .filter-panel__actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 767px) {
+  .filter-panel__actions {
+    width: 100%;
+  }
+
+  .filter-panel__actions .el-button {
+    flex: 1;
+  }
+}
+
+/* Tables: horizontal scroll on narrow screens */
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll .el-table {
+  min-width: 640px;
+}
+
+/* Detail / form layouts */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+}
+
+@media (max-width: 767px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+  max-width: 880px;
+}
+
+@media (max-width: 767px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+}
+
+.form-grid--full {
+  grid-column: 1 / -1;
+}
+
+/* Device visibility helpers */
+.hide-mobile {
+  display: initial;
+}
+
+.show-mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .show-mobile-only {
+    display: initial !important;
+  }
+}
+
+/* Global Element Plus dialogs — mobile bottom sheet */
+@media (max-width: 767px) {
+  .el-overlay-dialog {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  .el-dialog {
+    --el-dialog-margin-top: 0px;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0;
+    max-height: min(88vh, 100%);
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.18);
+  }
+
+  .el-dialog.is-fullscreen {
+    border-radius: 0;
+    max-height: 100%;
+  }
+
+  .el-dialog::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 10px auto 0;
+    border-radius: 999px;
+    background: #dcdfe6;
+    flex-shrink: 0;
+  }
+
+  .el-dialog__header {
+    padding: 12px 16px 10px;
+    margin-right: 0;
+    flex-shrink: 0;
+  }
+
+  .el-dialog__title {
+    font-size: 16px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .el-dialog__headerbtn {
+    top: 18px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .el-dialog__body {
+    padding: 4px 16px 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid #ebeef5;
+    background: #fff;
+    flex-shrink: 0;
+  }
+
+  /* Element Plus default button spacing breaks mobile footers */
+  .el-dialog__footer .dialog-footer,
+  .el-dialog__footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .el-dialog__footer .el-button {
+    margin: 0 !important;
+    flex: 1 1 calc(50% - 4px);
+    min-height: 40px;
+  }
+
+  .el-dialog__footer .el-button + .el-button {
+    margin-left: 0 !important;
+  }
+
+  .el-dialog__footer .el-button.is-text,
+  .el-dialog__footer .el-button.is-link {
+    flex: 1 1 100%;
+  }
+
+  .el-message-box {
+    width: calc(100vw - 32px) !important;
+    max-width: 400px !important;
+    border-radius: 14px;
+    padding-bottom: 8px;
+  }
+
+  .el-message-box__btns {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px 12px;
+  }
+
+  .el-message-box__btns .el-button {
+    flex: 1;
+    margin: 0 !important;
+    min-height: 40px;
+  }
+}
+
+/* Tablet: centered card, not sheet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .el-dialog {
+    max-width: min(720px, 92vw);
+  }
+}
+
+/* Dialog header drag cursor (desktop/tablet) */
+@media (min-width: 768px) {
+  .el-dialog.is-draggable .el-dialog__header {
+    cursor: move;
+    user-select: none;
+  }
+}
+
+.auth-page {
+  padding: 16px;
+}
+
+.auth-card {
+  width: 100% !important;
+  max-width: 400px;
+}
+

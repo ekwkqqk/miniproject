@@ -11,7 +11,7 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank(message = "비밀번호를 입력해주세요.")
-    @Size(min = 6, message = "비밀번호는 6자 이상이어야 합니다.")
+    @Size(min = 1, max = 128, message = "비밀번호를 입력해주세요.")
     private String password;
 
     @NotBlank(message = "이름을 입력해주세요.")

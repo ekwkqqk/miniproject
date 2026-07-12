@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as authApi from '@/features/auth/api'
-import { getErrorMessage } from '@/shared/api/client'
+import { getErrorMessage, getErrorCode } from '@/shared/api/client'
 import {
   getAccessToken,
   setAuthSession,
@@ -82,7 +82,20 @@ export const useAuthStore = defineStore('auth', () => {
       }
       return data
     } catch (error) {
-      throw new Error(getErrorMessage(error))
+      const err = new Error(getErrorMessage(error))
+      err.errorCode = getErrorCode(error)
+      throw err
+    }
+  }
+
+  async function changePassword(payload) {
+    try {
+      const { data } = await authApi.changePassword(payload)
+      return data
+    } catch (error) {
+      const err = new Error(getErrorMessage(error))
+      err.errorCode = getErrorCode(error)
+      throw err
     }
   }
 
@@ -118,6 +131,7 @@ export const useAuthStore = defineStore('auth', () => {
     restoreSession,
     register,
     login,
+    changePassword,
     fetchMe,
     logout,
   }

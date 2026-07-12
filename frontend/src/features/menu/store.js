@@ -47,16 +47,26 @@ export const useMenuStore = defineStore('menu', () => {
     loaded.value = false
   }
 
+  function resolveMenu(url) {
+    const leaves = flattenLeaves(menus.value)
+    const exact = leaves.find((menu) => menu.url === url)
+    if (exact) return exact
+    // /demo/view/1001 → /demo/view
+    return leaves
+      .filter((menu) => url.startsWith(`${menu.url}/`))
+      .sort((a, b) => b.url.length - a.url.length)[0] || null
+  }
+
   function getMenuByUrl(url) {
-    return flattenLeaves(menus.value).find((menu) => menu.url === url) || null
+    return resolveMenu(url)
   }
 
   function canAccess(url) {
-    return !!getMenuByUrl(url)
+    return !!resolveMenu(url)
   }
 
   function getButtons(url) {
-    return getMenuByUrl(url)?.buttons || emptyButtons()
+    return resolveMenu(url)?.buttons || emptyButtons()
   }
 
   return {

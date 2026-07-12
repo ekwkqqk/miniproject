@@ -16,6 +16,10 @@ export function logout() {
   return client.post('/auth/logout')
 }
 
+export function changePassword(payload) {
+  return client.post('/auth/change-password', payload)
+}
+
 export function getMe() {
   return client.get('/users/me')
 }

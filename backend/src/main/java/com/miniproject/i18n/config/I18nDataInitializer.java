@@ -108,6 +108,9 @@ public class I18nDataInitializer {
         ensureMessage(menu, "mailTemplates", "메일 템플릿",
                 ko, "메일 템플릿",
                 en, "Mail Templates");
+        ensureMessage(menu, "settings", "시스템 설정",
+                ko, "시스템 설정",
+                en, "Settings");
 
         ensureI18nMenus();
     }

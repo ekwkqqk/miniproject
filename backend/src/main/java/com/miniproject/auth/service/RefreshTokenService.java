@@ -31,6 +31,11 @@ public class RefreshTokenService {
         return token;
     }
 
+    @Transactional
+    public void revokeAllActiveSessions(Long userId) {
+        refreshTokenRepository.revokeAllActiveByUserId(userId);
+    }
+
     @Transactional(readOnly = true)
     public RefreshToken validateRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)

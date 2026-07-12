@@ -32,6 +32,9 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private LocalDateTime passwordChangedAt;
+
     protected User() {
     }
 
@@ -39,7 +42,9 @@ public class User {
         this.email = email;
         this.password = password;
         this.name = name;
-        this.createdAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.passwordChangedAt = now;
     }
 
     public Long getId() {
@@ -60,5 +65,14 @@ public class User {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public LocalDateTime getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+        this.passwordChangedAt = LocalDateTime.now();
     }
 }

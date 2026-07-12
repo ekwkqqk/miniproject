@@ -1,0 +1,121 @@
+package com.miniproject.settings.domain;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Entity
+@Table(name = "system_settings")
+public class SystemSettings {
+
+    public static final long SINGLETON_ID = 1L;
+
+    @Id
+    private Long id = SINGLETON_ID;
+
+    /** 테마 primary 색상 (hex) */
+    @Column(nullable = false, length = 20)
+    private String themePrimaryColor;
+
+    /** 비밀번호 변경 주기(일). 0이면 미사용 */
+    @Column(nullable = false)
+    private int passwordChangePeriodDays;
+
+    /** 비밀번호 최소 길이 */
+    @Column(nullable = false)
+    private int passwordMinLength;
+
+    /** 회원가입 시 부여할 Role 코드들 (쉼표 구분) */
+    @Column(name = "default_role_codes", nullable = false, length = 500)
+    private String defaultRoleCodes;
+
+    /** true면 동일 계정 다중 로그인 허용 */
+    @Column(nullable = false)
+    private boolean allowMultiLogin;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    protected SystemSettings() {
+    }
+
+    public static SystemSettings defaults() {
+        SystemSettings settings = new SystemSettings();
+        settings.id = SINGLETON_ID;
+        settings.themePrimaryColor = "#409EFF";
+        settings.passwordChangePeriodDays = 0;
+        settings.passwordMinLength = 6;
+        settings.defaultRoleCodes = "USER";
+        settings.allowMultiLogin = true;
+        settings.updatedAt = LocalDateTime.now();
+        return settings;
+    }
+
+    public void update(String themePrimaryColor,
+                       int passwordChangePeriodDays,
+                       int passwordMinLength,
+                       List<String> defaultRoleCodes,
+                       boolean allowMultiLogin) {
+        this.themePrimaryColor = themePrimaryColor;
+        this.passwordChangePeriodDays = passwordChangePeriodDays;
+        this.passwordMinLength = passwordMinLength;
+        this.defaultRoleCodes = joinRoleCodes(defaultRoleCodes);
+        this.allowMultiLogin = allowMultiLogin;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getThemePrimaryColor() {
+        return themePrimaryColor;
+    }
+
+    public int getPasswordChangePeriodDays() {
+        return passwordChangePeriodDays;
+    }
+
+    public int getPasswordMinLength() {
+        return passwordMinLength;
+    }
+
+    public List<String> getDefaultRoleCodes() {
+        return parseRoleCodes(defaultRoleCodes);
+    }
+
+    public boolean isAllowMultiLogin() {
+        return allowMultiLogin;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public static List<String> parseRoleCodes(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(code -> !code.isEmpty())
+                .map(String::toUpperCase)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    public static String joinRoleCodes(List<String> codes) {
+        return codes.stream()
+                .map(String::trim)
+                .filter(code -> !code.isEmpty())
+                .map(String::toUpperCase)
+                .distinct()
+                .collect(Collectors.joining(","));
+    }
+}

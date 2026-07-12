@@ -132,11 +132,16 @@ public class RbacDataInitializer {
             // ignore if already dropped or unsupported
         }
         try {
-            // 폴더 메뉴(url null)를 위해 기존 NOT NULL 제약 제거
-            // Hibernate ddl-auto=update 는 NOT NULL 해제를 자동으로 하지 않음
             jdbcTemplate.execute("ALTER TABLE menus ALTER COLUMN url DROP NOT NULL");
         } catch (Exception ignored) {
             // ignore if already nullable
+        }
+        try {
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP");
+            jdbcTemplate.execute("UPDATE users SET password_changed_at = created_at WHERE password_changed_at IS NULL");
+            jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN password_changed_at SET NOT NULL");
+        } catch (Exception ignored) {
+            // ignore if already migrated
         }
     }
 }

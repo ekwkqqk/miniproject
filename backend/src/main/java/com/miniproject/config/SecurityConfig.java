@@ -55,7 +55,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/api/auth/**", "/api/health").permitAll();
+                    auth.requestMatchers("/api/auth/**", "/api/health", "/api/settings/public").permitAll();
                     if (swaggerEnabled) {
                         auth.requestMatchers(SWAGGER_PATHS).permitAll();
                     } else {
