@@ -7,3 +7,5 @@ app:
     secret: ${JWT_SECRET:change-me-in-production-use-at-least-32-characters}
     access-expiration-ms: 900000
     refresh-expiration-ms: 604800000
+  mail:
+    enabled: ${MAIL_ENABLED:false}

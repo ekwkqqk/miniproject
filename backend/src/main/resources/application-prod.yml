@@ -6,6 +6,17 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 # 운영 환경에서는 Swagger / OpenAPI 문서 비활성화
 springdoc:
@@ -13,3 +24,7 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+app:
+  mail:
+    enabled: ${MAIL_ENABLED:true}

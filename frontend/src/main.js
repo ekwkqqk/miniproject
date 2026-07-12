@@ -5,6 +5,7 @@ import 'element-plus/dist/index.css'
 
 import App from './App.vue'
 import router from './router'
+import { createCanDirectivePlugin } from '@/features/menu/directives/can'
 
 // 이전 localStorage 토큰 방식 잔여 데이터 제거
 localStorage.removeItem('accessToken')
@@ -16,5 +17,6 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
+app.use(createCanDirectivePlugin())
 
 app.mount('#app')

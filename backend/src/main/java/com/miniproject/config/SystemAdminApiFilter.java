@@ -1,6 +1,6 @@
 package com.miniproject.config;
 
-import com.miniproject.service.RoleService;
+import com.miniproject.role.service.RoleService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

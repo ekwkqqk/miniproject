@@ -1,7 +1,7 @@
 package com.miniproject.config;
 
-import com.miniproject.domain.Role;
-import com.miniproject.domain.UserRoleRepository;
+import com.miniproject.role.domain.Role;
+import com.miniproject.role.domain.UserRoleRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

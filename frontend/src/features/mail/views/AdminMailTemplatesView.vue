@@ -1,0 +1,274 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+import * as mailApi from '@/features/mail/api'
+import { useMenuAuth } from '@/features/menu/useMenuAuth'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+const { canUpdate, canDelete } = useMenuAuth()
+const templates = ref([])
+const loading = ref(false)
+const dialogVisible = ref(false)
+const sendVisible = ref(false)
+const editingId = ref(null)
+const sendTarget = ref(null)
+
+const emptyForm = () => ({
+  code: '',
+  name: '',
+  description: '',
+  fromAddress: '',
+  fromName: '',
+  toAddresses: '',
+  ccAddresses: '',
+  bccAddresses: '',
+  subject: '',
+  body: '',
+  html: true,
+  enabled: true,
+})
+
+const form = ref(emptyForm())
+const sendForm = ref({
+  to: '',
+  paramsJson: '{"name":"홍길동"}',
+})
+
+async function load() {
+  loading.value = true
+  try {
+    const { data } = await mailApi.getTemplates()
+    if (data.success) templates.value = data.data
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+function openCreate() {
+  editingId.value = null
+  form.value = emptyForm()
+  dialogVisible.value = true
+}
+
+function openEdit(row) {
+  editingId.value = row.id
+  form.value = {
+    code: row.code,
+    name: row.name,
+    description: row.description || '',
+    fromAddress: row.fromAddress,
+    fromName: row.fromName || '',
+    toAddresses: row.toAddresses,
+    ccAddresses: row.ccAddresses || '',
+    bccAddresses: row.bccAddresses || '',
+    subject: row.subject,
+    body: row.body,
+    html: row.html,
+    enabled: row.enabled,
+  }
+  dialogVisible.value = true
+}
+
+async function handleSave() {
+  try {
+    const payload = { ...form.value }
+    const { data } = editingId.value
+      ? await mailApi.updateTemplate(editingId.value, payload)
+      : await mailApi.createTemplate(payload)
+    if (data.success) {
+      ElMessage.success(editingId.value ? '템플릿이 수정되었습니다.' : '템플릿이 등록되었습니다.')
+      dialogVisible.value = false
+      await load()
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || error.message)
+  }
+}
+
+async function handleDelete(row) {
+  try {
+    await ElMessageBox.confirm(`템플릿 "${row.code}"을(를) 삭제할까요?`, '확인', { type: 'warning' })
+    const { data } = await mailApi.deleteTemplate(row.id)
+    if (data.success) {
+      ElMessage.success('템플릿이 삭제되었습니다.')
+      await load()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.response?.data?.message || error.message)
+    }
+  }
+}
+
+function openSend(row) {
+  sendTarget.value = row
+  sendForm.value = {
+    to: row.toAddresses || '',
+    paramsJson: '{"name":"홍길동"}',
+  }
+  sendVisible.value = true
+}
+
+async function handleSend() {
+  try {
+    let params = {}
+    try {
+      params = JSON.parse(sendForm.value.paramsJson || '{}')
+    } catch {
+      ElMessage.error('파라미터 JSON 형식이 올바르지 않습니다.')
+      return
+    }
+    const to = sendForm.value.to
+      .split(/[,;]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const { data } = await mailApi.sendMail({
+      templateCode: sendTarget.value.code,
+      to: to.length ? to : undefined,
+      params,
+    })
+    if (data.success) {
+      const dry = data.data?.dryRun ? ' (DRY-RUN: 로그 출력)' : ''
+      ElMessage.success(`메일 발송 처리 완료${dry}`)
+      sendVisible.value = false
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || error.message)
+  }
+}
+
+onMounted(load)
+</script>
+
+<template>
+  <el-card>
+    <template #header>
+      <div class="header">
+        <span>메일 템플릿</span>
+        <el-button v-if="canUpdate" type="primary" @click="openCreate">템플릿 등록</el-button>
+      </div>
+    </template>
+
+    <p class="hint">
+      제목/본문에 <code>{name}</code> 형태 파라미터를 사용할 수 있습니다.
+      수신자·참조는 쉼표로 여러 명을 입력하세요. 로컬에서는 DRY-RUN(로그)으로 동작합니다.
+    </p>
+
+    <el-table v-loading="loading" :data="templates" style="width: 100%">
+      <el-table-column prop="code" label="코드" width="140" />
+      <el-table-column prop="name" label="이름" width="160" />
+      <el-table-column label="발신자" min-width="180">
+        <template #default="{ row }">
+          {{ row.fromName ? `${row.fromName} <${row.fromAddress}>` : row.fromAddress }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="toAddresses" label="수신자" min-width="180" show-overflow-tooltip />
+      <el-table-column prop="subject" label="제목" min-width="200" show-overflow-tooltip />
+      <el-table-column label="사용" width="80">
+        <template #default="{ row }">
+          <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? 'Y' : 'N' }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="관리" width="220" fixed="right">
+        <template #default="{ row }">
+          <el-button type="success" link @click="openSend(row)">발송</el-button>
+          <el-button v-if="canUpdate" type="primary" link @click="openEdit(row)">수정</el-button>
+          <el-button v-if="canDelete" type="danger" link @click="handleDelete(row)">삭제</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <el-dialog v-model="dialogVisible" :title="editingId ? '템플릿 수정' : '템플릿 등록'" width="720px">
+      <el-form label-position="top">
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="코드">
+              <el-input v-model="form.code" :disabled="!!editingId" placeholder="예: welcome" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="이름">
+              <el-input v-model="form.name" placeholder="예: 가입 환영 메일" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="설명">
+          <el-input v-model="form.description" />
+        </el-form-item>
+        <el-row :gutter="12">
+          <el-col :span="14">
+            <el-form-item label="발신자 이메일">
+              <el-input v-model="form.fromAddress" placeholder="noreply@example.com" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="10">
+            <el-form-item label="발신자 이름">
+              <el-input v-model="form.fromName" placeholder="miniproject" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="수신자 (To)">
+          <el-input v-model="form.toAddresses" placeholder="user1@example.com, user2@example.com" />
+        </el-form-item>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="참조 (Cc)">
+              <el-input v-model="form.ccAddresses" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="숨은참조 (Bcc)">
+              <el-input v-model="form.bccAddresses" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="제목">
+          <el-input v-model="form.subject" placeholder="[알림] {name}님 환영합니다" />
+        </el-form-item>
+        <el-form-item label="본문">
+          <el-input v-model="form.body" type="textarea" :rows="8" />
+        </el-form-item>
+        <el-form-item label="옵션">
+          <el-checkbox v-model="form.html">HTML 본문</el-checkbox>
+          <el-checkbox v-model="form.enabled" style="margin-left: 16px">사용</el-checkbox>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">취소</el-button>
+        <el-button type="primary" @click="handleSave">저장</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="sendVisible" title="메일 발송 테스트" width="520px">
+      <el-form label-position="top" v-if="sendTarget">
+        <el-form-item label="템플릿">
+          <el-input :model-value="`${sendTarget.name} (${sendTarget.code})`" disabled />
+        </el-form-item>
+        <el-form-item label="수신자 (비우면 템플릿 기본값)">
+          <el-input v-model="sendForm.to" />
+        </el-form-item>
+        <el-form-item label="파라미터 JSON">
+          <el-input v-model="sendForm.paramsJson" type="textarea" :rows="4" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="sendVisible = false">취소</el-button>
+        <el-button type="primary" @click="handleSend">발송</el-button>
+      </template>
+    </el-dialog>
+  </el-card>
+</template>
+
+<style scoped>
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.hint {
+  margin: 0 0 12px;
+  color: #666;
+  font-size: 13px;
+}
+</style>

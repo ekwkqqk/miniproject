@@ -18,3 +18,22 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+# 로컬 기본: 실제 발송 없이 로그 출력 (MAIL_ENABLED=true + spring.mail.* 설정 시 SMTP 발송)
+app:
+  mail:
+    enabled: false
+
+# 실제 SMTP 사용 예시 (필요 시 주석 해제)
+# spring:
+#   mail:
+#     host: smtp.example.com
+#     port: 587
+#     username: ${MAIL_USERNAME}
+#     password: ${MAIL_PASSWORD}
+#     properties:
+#       mail:
+#         smtp:
+#           auth: true
+#           starttls:
+#             enable: true
