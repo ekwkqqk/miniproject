@@ -29,6 +29,10 @@ public class SystemSettingsRequest {
 
     private boolean allowMultiLogin;
 
+    @Min(value = 0, message = "로그인 실패 잠금 횟수는 0 이상이어야 합니다.")
+    @Max(value = 100, message = "로그인 실패 잠금 횟수는 100 이하여야 합니다.")
+    private int maxFailedLoginAttempts;
+
     public String getThemePrimaryColor() {
         return themePrimaryColor;
     }
@@ -69,12 +73,21 @@ public class SystemSettingsRequest {
         this.allowMultiLogin = allowMultiLogin;
     }
 
+    public int getMaxFailedLoginAttempts() {
+        return maxFailedLoginAttempts;
+    }
+
+    public void setMaxFailedLoginAttempts(int maxFailedLoginAttempts) {
+        this.maxFailedLoginAttempts = maxFailedLoginAttempts;
+    }
+
     public static record Response(
             String themePrimaryColor,
             int passwordChangePeriodDays,
             int passwordMinLength,
             List<String> defaultRoleCodes,
-            boolean allowMultiLogin
+            boolean allowMultiLogin,
+            int maxFailedLoginAttempts
     ) {
         public static Response from(SystemSettings settings) {
             return new Response(
@@ -82,7 +95,8 @@ public class SystemSettingsRequest {
                     settings.getPasswordChangePeriodDays(),
                     settings.getPasswordMinLength(),
                     settings.getDefaultRoleCodes(),
-                    settings.isAllowMultiLogin()
+                    settings.isAllowMultiLogin(),
+                    settings.getMaxFailedLoginAttempts()
             );
         }
     }

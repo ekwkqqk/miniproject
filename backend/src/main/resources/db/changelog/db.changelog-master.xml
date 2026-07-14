@@ -7,5 +7,7 @@
 
     <include file="db/changelog/changes/001-create-schema.xml"/>
     <include file="db/changelog/changes/002-add-user-enabled.xml"/>
+    <include file="db/changelog/changes/003-create-menu-access-logs.xml"/>
+    <include file="db/changelog/changes/004-add-failed-login-lock.xml"/>
 
 </databaseChangeLog>

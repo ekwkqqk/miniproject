@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.menu.domain.MenuAccessLogRepository">
+
+    <resultMap id="MenuAccessLogResultMap" type="com.miniproject.menu.domain.MenuAccessLog">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="userEmail" column="user_email"/>
+        <result property="menuId" column="menu_id"/>
+        <result property="menuUrl" column="menu_url"/>
+        <result property="menuName" column="menu_name"/>
+        <result property="httpMethod" column="http_method"/>
+        <result property="requestUri" column="request_uri"/>
+        <result property="clientIp" column="client_ip"/>
+        <result property="userAgent" column="user_agent"/>
+        <result property="httpStatus" column="http_status"/>
+        <result property="accessType" column="access_type"/>
+        <result property="accessedAt" column="accessed_at"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_menu_access_logs (
+            user_id, user_email, menu_id, menu_url, menu_name,
+            http_method, request_uri, client_ip, user_agent,
+            http_status, access_type, accessed_at
+        ) VALUES (
+            #{userId}, #{userEmail}, #{menuId}, #{menuUrl}, #{menuName},
+            #{httpMethod}, #{requestUri}, #{clientIp}, #{userAgent},
+            #{httpStatus}, #{accessType}, #{accessedAt}
+        )
+    </insert>
+
+    <select id="findRecent" resultMap="MenuAccessLogResultMap">
+        SELECT id, user_id, user_email, menu_id, menu_url, menu_name,
+               http_method, request_uri, client_ip, user_agent,
+               http_status, access_type, accessed_at
+        FROM pjt_menu_access_logs
+        ORDER BY accessed_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM pjt_menu_access_logs
+    </select>
+
+</mapper>

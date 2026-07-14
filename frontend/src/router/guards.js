@@ -1,6 +1,7 @@
 import { useAuthStore } from '@/features/auth/store'
 import { useMenuStore } from '@/features/menu/store'
 import { useI18nStore } from '@/features/i18n/store'
+import * as menusApi from '@/features/menu/api'
 
 export async function setupRouterGuards(router) {
   router.beforeEach(async (to) => {
@@ -46,5 +47,19 @@ export async function setupRouterGuards(router) {
     }
 
     return true
+  })
+
+  router.afterEach((to) => {
+    const authStore = useAuthStore()
+    const menuStore = useMenuStore()
+    if (!authStore.isAuthenticated) return
+
+    const matched = menuStore.getMenuByUrl(to.path)
+    if (!matched && !to.meta.requiresMenu) return
+
+    const menuUrl = matched?.url || to.path
+    menusApi.reportMenuAccess(menuUrl).catch(() => {
+      // ignore logging failures
+    })
   })
 }

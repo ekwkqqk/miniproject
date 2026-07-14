@@ -11,6 +11,7 @@ public class User {
     private LocalDateTime createdAt;
     private LocalDateTime passwordChangedAt;
     private boolean enabled = true;
+    private int failedLoginAttempts = 0;
 
     protected User() {
     }
@@ -23,6 +24,7 @@ public class User {
         this.createdAt = now;
         this.passwordChangedAt = now;
         this.enabled = true;
+        this.failedLoginAttempts = 0;
     }
 
     public Long getId() {
@@ -81,6 +83,14 @@ public class User {
         this.enabled = enabled;
     }
 
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public void setFailedLoginAttempts(int failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
     public void changePassword(String encodedPassword) {
         this.password = encodedPassword;
         this.passwordChangedAt = LocalDateTime.now();
@@ -88,5 +98,17 @@ public class User {
 
     public void changeEnabled(boolean enabled) {
         this.enabled = enabled;
+        if (enabled) {
+            this.failedLoginAttempts = 0;
+        }
+    }
+
+    public int registerFailedLogin() {
+        this.failedLoginAttempts += 1;
+        return this.failedLoginAttempts;
+    }
+
+    public void resetFailedLoginAttempts() {
+        this.failedLoginAttempts = 0;
     }
 }

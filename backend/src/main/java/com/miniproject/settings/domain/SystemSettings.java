@@ -26,6 +26,9 @@ public class SystemSettings {
     /** true면 동일 계정 다중 로그인 허용 */
     private boolean allowMultiLogin;
 
+    /** 로그인 실패 시 계정 잠금 기준 횟수. 0이면 미사용 */
+    private int maxFailedLoginAttempts;
+
     private LocalDateTime updatedAt;
 
     protected SystemSettings() {
@@ -39,6 +42,7 @@ public class SystemSettings {
         settings.passwordMinLength = 6;
         settings.defaultRoleCodes = "USER";
         settings.allowMultiLogin = true;
+        settings.maxFailedLoginAttempts = 0;
         settings.updatedAt = LocalDateTime.now();
         return settings;
     }
@@ -47,12 +51,14 @@ public class SystemSettings {
                        int passwordChangePeriodDays,
                        int passwordMinLength,
                        List<String> defaultRoleCodes,
-                       boolean allowMultiLogin) {
+                       boolean allowMultiLogin,
+                       int maxFailedLoginAttempts) {
         this.themePrimaryColor = themePrimaryColor;
         this.passwordChangePeriodDays = passwordChangePeriodDays;
         this.passwordMinLength = passwordMinLength;
         this.defaultRoleCodes = joinRoleCodes(defaultRoleCodes);
         this.allowMultiLogin = allowMultiLogin;
+        this.maxFailedLoginAttempts = maxFailedLoginAttempts;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -106,6 +112,14 @@ public class SystemSettings {
 
     public void setAllowMultiLogin(boolean allowMultiLogin) {
         this.allowMultiLogin = allowMultiLogin;
+    }
+
+    public int getMaxFailedLoginAttempts() {
+        return maxFailedLoginAttempts;
+    }
+
+    public void setMaxFailedLoginAttempts(int maxFailedLoginAttempts) {
+        this.maxFailedLoginAttempts = maxFailedLoginAttempts;
     }
 
     public LocalDateTime getUpdatedAt() {

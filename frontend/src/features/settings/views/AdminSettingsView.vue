@@ -18,6 +18,7 @@ const form = ref({
   passwordMinLength: 6,
   defaultRoleCodes: ['USER'],
   allowMultiLogin: true,
+  maxFailedLoginAttempts: 0,
 })
 
 const presetColors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#1a5f4a', '#6c5ce7']
@@ -140,6 +141,12 @@ onMounted(load)
       </el-form-item>
 
       <el-divider content-position="left">로그인</el-divider>
+      <el-form-item label="계정 잠금 (로그인 실패 횟수)">
+        <el-input-number v-model="form.maxFailedLoginAttempts" :min="0" :max="100" />
+        <div class="hint">
+          0이면 잠금하지 않습니다. N회 연속 로그인 실패 시 계정을 비활성화합니다. 관리자가 사용자를 다시 활성화하면 해제됩니다.
+        </div>
+      </el-form-item>
       <el-form-item label="멀티 로그인">
         <el-switch
           v-model="form.allowMultiLogin"

@@ -11,10 +11,11 @@
         <result property="createdAt" column="created_at"/>
         <result property="passwordChangedAt" column="password_changed_at"/>
         <result property="enabled" column="enabled"/>
+        <result property="failedLoginAttempts" column="failed_login_attempts"/>
     </resultMap>
 
     <sql id="UserColumns">
-        id, email, password, name, created_at, password_changed_at, enabled
+        id, email, password, name, created_at, password_changed_at, enabled, failed_login_attempts
     </sql>
 
     <select id="findById" resultMap="UserResultMap">
@@ -40,8 +41,8 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        INSERT INTO pjt_users (email, password, name, created_at, password_changed_at, enabled)
-        VALUES (#{email}, #{password}, #{name}, #{createdAt}, #{passwordChangedAt}, #{enabled})
+        INSERT INTO pjt_users (email, password, name, created_at, password_changed_at, enabled, failed_login_attempts)
+        VALUES (#{email}, #{password}, #{name}, #{createdAt}, #{passwordChangedAt}, #{enabled}, #{failedLoginAttempts})
     </insert>
 
     <update id="update">
@@ -50,7 +51,8 @@
             password = #{password},
             name = #{name},
             password_changed_at = #{passwordChangedAt},
-            enabled = #{enabled}
+            enabled = #{enabled},
+            failed_login_attempts = #{failedLoginAttempts}
         WHERE id = #{id}
     </update>
 

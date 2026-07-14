@@ -47,3 +47,7 @@ export function updateUserRoles(userId, roleIds) {
 export function updateUserEnabled(userId, enabled) {
   return client.put(`/admin/users/${userId}/enabled`, { enabled })
 }
+
+export function getMenuAccessLogs(params = {}) {
+  return client.get('/admin/menu-access-logs', { params })
+}

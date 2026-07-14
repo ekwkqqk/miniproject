@@ -10,12 +10,13 @@
         <result property="passwordMinLength" column="password_min_length"/>
         <result property="defaultRoleCodes" column="default_role_codes"/>
         <result property="allowMultiLogin" column="allow_multi_login"/>
+        <result property="maxFailedLoginAttempts" column="max_failed_login_attempts"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <select id="findById" resultMap="SystemSettingsResultMap">
         SELECT id, theme_primary_color, password_change_period_days, password_min_length,
-               default_role_codes, allow_multi_login, updated_at
+               default_role_codes, allow_multi_login, max_failed_login_attempts, updated_at
         FROM pjt_system_settings
         WHERE id = #{id}
     </select>
@@ -23,10 +24,10 @@
     <insert id="insert">
         INSERT INTO pjt_system_settings (
             id, theme_primary_color, password_change_period_days, password_min_length,
-            default_role_codes, allow_multi_login, updated_at
+            default_role_codes, allow_multi_login, max_failed_login_attempts, updated_at
         ) VALUES (
             #{id}, #{themePrimaryColor}, #{passwordChangePeriodDays}, #{passwordMinLength},
-            #{defaultRoleCodesRaw}, #{allowMultiLogin}, #{updatedAt}
+            #{defaultRoleCodesRaw}, #{allowMultiLogin}, #{maxFailedLoginAttempts}, #{updatedAt}
         )
     </insert>
 
@@ -37,6 +38,7 @@
             password_min_length = #{passwordMinLength},
             default_role_codes = #{defaultRoleCodesRaw},
             allow_multi_login = #{allowMultiLogin},
+            max_failed_login_attempts = #{maxFailedLoginAttempts},
             updated_at = #{updatedAt}
         WHERE id = #{id}
     </update>

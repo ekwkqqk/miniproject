@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
         return switch (errorCode) {
             case INVALID_INPUT, DUPLICATE_EMAIL, INVALID_CURRENT_PASSWORD -> HttpStatus.BAD_REQUEST;
             case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
-            case FORBIDDEN -> HttpStatus.FORBIDDEN;
+            case FORBIDDEN, ACCOUNT_LOCKED -> HttpStatus.FORBIDDEN;
             case NOT_FOUND -> HttpStatus.NOT_FOUND;
             case PASSWORD_EXPIRED -> HttpStatus.CONFLICT;
             default -> HttpStatus.INTERNAL_SERVER_ERROR;

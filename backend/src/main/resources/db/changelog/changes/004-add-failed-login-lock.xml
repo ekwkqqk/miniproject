@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004-add-failed-login-lock" author="miniproject">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="pjt_system_settings" columnName="max_failed_login_attempts"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="pjt_system_settings">
+            <column name="max_failed_login_attempts" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <update tableName="pjt_system_settings">
+            <column name="max_failed_login_attempts" valueNumeric="0"/>
+        </update>
+    </changeSet>
+
+    <changeSet id="004-add-user-failed-login-attempts" author="miniproject">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="pjt_users" columnName="failed_login_attempts"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="pjt_users">
+            <column name="failed_login_attempts" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <update tableName="pjt_users">
+            <column name="failed_login_attempts" valueNumeric="0"/>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>

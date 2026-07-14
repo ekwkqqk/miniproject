@@ -59,7 +59,8 @@ public class SystemSettingsService {
                 request.getPasswordChangePeriodDays(),
                 request.getPasswordMinLength(),
                 roleCodes,
-                request.isAllowMultiLogin()
+                request.isAllowMultiLogin(),
+                request.getMaxFailedLoginAttempts()
         );
         systemSettingsRepository.save(settings);
         return SystemSettingsRequest.Response.from(settings);

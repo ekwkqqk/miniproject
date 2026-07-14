@@ -20,7 +20,10 @@ import com.miniproject.settings.domain.SystemSettings;
 import com.miniproject.settings.service.SystemSettingsService;
 import com.miniproject.user.dto.UserResponse;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -82,17 +85,56 @@ public class AuthService {
 
     @Transactional
     public AuthTokens login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (DisabledException ex) {
+            throw ex;
+        } catch (BadCredentialsException | UsernameNotFoundException ex) {
+            if (registerFailedLoginAttempt(request.getEmail())) {
+                throw new BusinessException(ErrorCode.ACCOUNT_LOCKED,
+                        "로그인 실패 횟수 초과로 계정이 잠겼습니다. 관리자에게 문의하세요.");
+            }
+            throw ex;
+        }
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."));
 
         assertUserEnabled(user);
+        user.resetFailedLoginAttempts();
+        userRepository.save(user);
+
         SystemSettings settings = systemSettingsService.getOrCreate();
         assertPasswordNotExpired(user, settings);
         return createAuthTokens(user, settings);
+    }
+
+    /**
+     * @return true if the account was locked by this failed attempt
+     */
+    private boolean registerFailedLoginAttempt(String email) {
+        SystemSettings settings = systemSettingsService.getOrCreate();
+        int maxAttempts = settings.getMaxFailedLoginAttempts();
+        if (maxAttempts <= 0 || email == null || email.isBlank()) {
+            return false;
+        }
+
+        return userRepository.findByEmail(email.trim()).map(user -> {
+            if (!user.isEnabled()) {
+                return false;
+            }
+            int attempts = user.registerFailedLogin();
+            if (attempts >= maxAttempts) {
+                user.changeEnabled(false);
+                userRepository.save(user);
+                refreshTokenService.revokeAllActiveSessions(user.getId());
+                return true;
+            }
+            userRepository.save(user);
+            return false;
+        }).orElse(false);
     }
 
     @Transactional

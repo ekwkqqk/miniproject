@@ -11,4 +11,10 @@ export const adminRoutes = [
     component: () => import('./views/AdminRolesView.vue'),
     meta: { requiresMenu: true },
   },
+  {
+    path: 'admin/menu-access-logs',
+    name: 'admin-menu-access-logs',
+    component: () => import('./views/AdminMenuAccessLogsView.vue'),
+    meta: { requiresMenu: true },
+  },
 ]
