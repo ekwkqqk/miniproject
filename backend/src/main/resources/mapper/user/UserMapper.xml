@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.user.domain.UserRepository">
+
+    <resultMap id="UserResultMap" type="com.miniproject.user.domain.User">
+        <id property="id" column="id"/>
+        <result property="email" column="email"/>
+        <result property="password" column="password"/>
+        <result property="name" column="name"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="passwordChangedAt" column="password_changed_at"/>
+        <result property="enabled" column="enabled"/>
+    </resultMap>
+
+    <sql id="UserColumns">
+        id, email, password, name, created_at, password_changed_at, enabled
+    </sql>
+
+    <select id="findById" resultMap="UserResultMap">
+        SELECT <include refid="UserColumns"/>
+        FROM pjt_users
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="UserResultMap">
+        SELECT <include refid="UserColumns"/>
+        FROM pjt_users
+        ORDER BY id ASC
+    </select>
+
+    <select id="findByEmail" resultMap="UserResultMap">
+        SELECT <include refid="UserColumns"/>
+        FROM pjt_users
+        WHERE email = #{email}
+    </select>
+
+    <select id="existsByEmail" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM pjt_users WHERE email = #{email})
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_users (email, password, name, created_at, password_changed_at, enabled)
+        VALUES (#{email}, #{password}, #{name}, #{createdAt}, #{passwordChangedAt}, #{enabled})
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_users
+        SET email = #{email},
+            password = #{password},
+            name = #{name},
+            password_changed_at = #{passwordChangedAt},
+            enabled = #{enabled}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_users WHERE id = #{id}
+    </delete>
+
+</mapper>

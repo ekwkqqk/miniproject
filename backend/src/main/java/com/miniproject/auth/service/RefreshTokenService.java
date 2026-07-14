@@ -51,10 +51,14 @@ public class RefreshTokenService {
     @Transactional
     public void revoke(RefreshToken refreshToken) {
         refreshToken.revoke();
+        refreshTokenRepository.save(refreshToken);
     }
 
     @Transactional
     public void revokeByToken(String token) {
-        refreshTokenRepository.findByToken(token).ifPresent(RefreshToken::revoke);
+        refreshTokenRepository.findByToken(token).ifPresent(refreshToken -> {
+            refreshToken.revoke();
+            refreshTokenRepository.save(refreshToken);
+        });
     }
 }

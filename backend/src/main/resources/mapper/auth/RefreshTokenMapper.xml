@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.auth.domain.RefreshTokenRepository">
+
+    <resultMap id="UserResultMap" type="com.miniproject.user.domain.User">
+        <id property="id" column="u_id"/>
+        <result property="email" column="u_email"/>
+        <result property="password" column="u_password"/>
+        <result property="name" column="u_name"/>
+        <result property="createdAt" column="u_created_at"/>
+        <result property="passwordChangedAt" column="u_password_changed_at"/>
+        <result property="enabled" column="u_enabled"/>
+    </resultMap>
+
+    <resultMap id="RefreshTokenWithUserMap" type="com.miniproject.auth.domain.RefreshToken">
+        <id property="id" column="id"/>
+        <result property="token" column="token"/>
+        <result property="userId" column="user_id"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="revoked" column="revoked"/>
+        <result property="createdAt" column="created_at"/>
+        <association property="user" resultMap="UserResultMap"/>
+    </resultMap>
+
+    <select id="findById" resultMap="RefreshTokenWithUserMap">
+        SELECT rt.id, rt.token, rt.user_id, rt.expires_at, rt.revoked, rt.created_at,
+               u.id AS u_id, u.email AS u_email, u.password AS u_password, u.name AS u_name,
+               u.created_at AS u_created_at, u.password_changed_at AS u_password_changed_at,
+               u.enabled AS u_enabled
+        FROM pjt_refresh_tokens rt
+        JOIN pjt_users u ON u.id = rt.user_id
+        WHERE rt.id = #{id}
+    </select>
+
+    <select id="findByToken" resultMap="RefreshTokenWithUserMap">
+        SELECT rt.id, rt.token, rt.user_id, rt.expires_at, rt.revoked, rt.created_at,
+               u.id AS u_id, u.email AS u_email, u.password AS u_password, u.name AS u_name,
+               u.created_at AS u_created_at, u.password_changed_at AS u_password_changed_at,
+               u.enabled AS u_enabled
+        FROM pjt_refresh_tokens rt
+        JOIN pjt_users u ON u.id = rt.user_id
+        WHERE rt.token = #{token}
+    </select>
+
+    <update id="revokeAllActiveByUserId">
+        UPDATE pjt_refresh_tokens
+        SET revoked = TRUE
+        WHERE user_id = #{userId}
+          AND revoked = FALSE
+    </update>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_refresh_tokens (token, user_id, expires_at, revoked, created_at)
+        VALUES (#{token}, #{userId}, #{expiresAt}, #{revoked}, #{createdAt})
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_refresh_tokens
+        SET token = #{token},
+            user_id = #{userId},
+            expires_at = #{expiresAt},
+            revoked = #{revoked}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_refresh_tokens WHERE id = #{id}
+    </delete>
+
+</mapper>

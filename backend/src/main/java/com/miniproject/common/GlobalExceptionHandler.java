@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,6 +29,12 @@ public class GlobalExceptionHandler {
                 .orElse("입력값이 올바르지 않습니다.");
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error(message, ErrorCode.INVALID_INPUT.getCode()));
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDisabledException(DisabledException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("비활성화된 계정입니다. 관리자에게 문의하세요.", ErrorCode.FORBIDDEN.getCode()));
     }
 
     @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})

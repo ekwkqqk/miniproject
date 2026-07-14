@@ -1,48 +1,48 @@
 package com.miniproject.i18n.domain;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface I18nMessageTextRepository extends JpaRepository<I18nMessageText, Long> {
+@Mapper
+public interface I18nMessageTextRepository {
+
+    Optional<I18nMessageText> findById(Long id);
 
     List<I18nMessageText> findByMessageId(Long messageId);
 
-    Optional<I18nMessageText> findByMessageIdAndLocaleId(Long messageId, Long localeId);
+    Optional<I18nMessageText> findByMessageIdAndLocaleId(@Param("messageId") Long messageId,
+                                                         @Param("localeId") Long localeId);
 
-    @Query("""
-            select t from I18nMessageText t
-            join fetch t.message m
-            join fetch m.group g
-            join fetch t.locale l
-            where l.code = :localeCode
-            """)
     List<I18nMessageText> findBundleByLocale(@Param("localeCode") String localeCode);
 
-    @Query("""
-            select t from I18nMessageText t
-            join fetch t.message m
-            join fetch m.group g
-            join fetch t.locale l
-            where l.code = :localeCode
-              and g.code = :groupCode
-            """)
     List<I18nMessageText> findBundleByLocaleAndGroup(@Param("localeCode") String localeCode,
                                                      @Param("groupCode") String groupCode);
 
-    @Modifying
-    @Query("delete from I18nMessageText t where t.message.id = :messageId")
     void deleteByMessageId(@Param("messageId") Long messageId);
 
-    @Modifying
-    @Query("delete from I18nMessageText t where t.message.group.id = :groupId")
     void deleteByGroupId(@Param("groupId") Long groupId);
 
-    @Modifying
-    @Query("delete from I18nMessageText t where t.locale.id = :localeId")
     void deleteByLocaleId(@Param("localeId") Long localeId);
+
+    int insert(I18nMessageText text);
+
+    int update(I18nMessageText text);
+
+    int deleteById(Long id);
+
+    default I18nMessageText save(I18nMessageText text) {
+        if (text.getId() == null) {
+            insert(text);
+        } else {
+            update(text);
+        }
+        return text;
+    }
+
+    default void delete(I18nMessageText text) {
+        deleteById(text.getId());
+    }
 }

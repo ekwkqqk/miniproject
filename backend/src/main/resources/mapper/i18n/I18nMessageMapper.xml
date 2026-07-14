@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.i18n.domain.I18nMessageRepository">
+
+    <resultMap id="GroupResultMap" type="com.miniproject.i18n.domain.I18nMessageGroup">
+        <id property="id" column="g_id"/>
+        <result property="code" column="g_code"/>
+        <result property="name" column="g_name"/>
+        <result property="description" column="g_description"/>
+        <result property="createdAt" column="g_created_at"/>
+    </resultMap>
+
+    <resultMap id="I18nMessageWithGroupMap" type="com.miniproject.i18n.domain.I18nMessage">
+        <id property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="code" column="code"/>
+        <result property="description" column="description"/>
+        <result property="createdAt" column="created_at"/>
+        <association property="group" resultMap="GroupResultMap"/>
+    </resultMap>
+
+    <resultMap id="I18nMessageSimpleMap" type="com.miniproject.i18n.domain.I18nMessage">
+        <id property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="code" column="code"/>
+        <result property="description" column="description"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="MessageWithGroupSelect">
+        m.id, m.group_id, m.code, m.description, m.created_at,
+        g.id AS g_id, g.code AS g_code, g.name AS g_name,
+        g.description AS g_description, g.created_at AS g_created_at
+    </sql>
+
+    <select id="findById" resultMap="I18nMessageWithGroupMap">
+        SELECT <include refid="MessageWithGroupSelect"/>
+        FROM pjt_i18n_messages m
+        JOIN pjt_i18n_message_groups g ON g.id = m.group_id
+        WHERE m.id = #{id}
+    </select>
+
+    <select id="findByGroupIdOrderByIdAsc" resultMap="I18nMessageSimpleMap">
+        SELECT id, group_id, code, description, created_at
+        FROM pjt_i18n_messages
+        WHERE group_id = #{groupId}
+        ORDER BY id ASC
+    </select>
+
+    <select id="findByGroupIdAndCode" resultMap="I18nMessageWithGroupMap">
+        SELECT <include refid="MessageWithGroupSelect"/>
+        FROM pjt_i18n_messages m
+        JOIN pjt_i18n_message_groups g ON g.id = m.group_id
+        WHERE m.group_id = #{groupId}
+          AND m.code = #{code}
+    </select>
+
+    <select id="existsByGroupIdAndCode" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM pjt_i18n_messages
+            WHERE group_id = #{groupId} AND code = #{code}
+        )
+    </select>
+
+    <select id="findByGroupCode" resultMap="I18nMessageWithGroupMap">
+        SELECT <include refid="MessageWithGroupSelect"/>
+        FROM pjt_i18n_messages m
+        JOIN pjt_i18n_message_groups g ON g.id = m.group_id
+        WHERE g.code = #{groupCode}
+        ORDER BY m.id ASC
+    </select>
+
+    <select id="findAllWithGroup" resultMap="I18nMessageWithGroupMap">
+        SELECT <include refid="MessageWithGroupSelect"/>
+        FROM pjt_i18n_messages m
+        JOIN pjt_i18n_message_groups g ON g.id = m.group_id
+        ORDER BY g.id ASC, m.id ASC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_i18n_messages (group_id, code, description, created_at)
+        VALUES (#{groupId}, #{code}, #{description}, #{createdAt})
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_i18n_messages
+        SET group_id = #{groupId},
+            code = #{code},
+            description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByGroupId">
+        DELETE FROM pjt_i18n_messages WHERE group_id = #{groupId}
+    </delete>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_i18n_messages WHERE id = #{id}
+    </delete>
+
+</mapper>

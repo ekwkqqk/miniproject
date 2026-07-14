@@ -2,32 +2,12 @@ package com.miniproject.role.domain;
 
 import com.miniproject.user.domain.User;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-
-@Entity
-@Table(name = "user_roles", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_user_role", columnNames = {"user_id", "role_id"})
-})
 public class UserRole {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    private Long userId;
+    private Long roleId;
     private User user;
-
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
     protected UserRole() {
@@ -36,17 +16,49 @@ public class UserRole {
     public UserRole(User user, Role role) {
         this.user = user;
         this.role = role;
+        this.userId = user != null ? user.getId() : null;
+        this.roleId = role != null ? role.getId() : null;
     }
 
     public Long getId() {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public Long getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(Long roleId) {
+        this.roleId = roleId;
+    }
+
     public User getUser() {
         return user;
     }
 
+    public void setUser(User user) {
+        this.user = user;
+        this.userId = user != null ? user.getId() : this.userId;
+    }
+
     public Role getRole() {
         return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+        this.roleId = role != null ? role.getId() : this.roleId;
     }
 }

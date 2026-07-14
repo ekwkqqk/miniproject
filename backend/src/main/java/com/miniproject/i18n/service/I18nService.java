@@ -83,6 +83,7 @@ public class I18nService {
         if (request.getSortOrder() != null) {
             locale.changeSortOrder(request.getSortOrder());
         }
+        localeRepository.save(locale);
         return I18nLocaleRequest.Response.from(locale);
     }
 
@@ -121,6 +122,7 @@ public class I18nService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "메시지 그룹을 찾을 수 없습니다."));
         group.changeName(request.getName().trim());
         group.changeDescription(request.getDescription());
+        groupRepository.save(group);
         return I18nGroupRequest.Response.from(group);
     }
 
@@ -161,6 +163,7 @@ public class I18nService {
         I18nMessage message = messageRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "메시지를 찾을 수 없습니다."));
         message.changeDescription(request.getDescription());
+        messageRepository.save(message);
         saveTexts(message, request.getTexts());
         return toMessageResponse(message);
     }
@@ -223,7 +226,10 @@ public class I18nService {
             String value = entry.getValue() == null ? "" : entry.getValue();
             textRepository.findByMessageIdAndLocaleId(message.getId(), locale.getId())
                     .ifPresentOrElse(
-                            existing -> existing.changeText(value),
+                            existing -> {
+                                existing.changeText(value);
+                                textRepository.save(existing);
+                            },
                             () -> textRepository.save(new I18nMessageText(message, locale, value))
                     );
         }

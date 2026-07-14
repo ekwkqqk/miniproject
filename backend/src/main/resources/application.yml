@@ -1,6 +1,9 @@
 spring:
   profiles:
     active: dev
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
+    change-log: classpath:db/changelog/db.changelog-master.xml
 
 app:
   jwt:
@@ -9,3 +12,5 @@ app:
     refresh-expiration-ms: 604800000
   mail:
     enabled: ${MAIL_ENABLED:false}
+  seed:
+    system-admin-password: ${SYSTEM_ADMIN_PASSWORD:Admin123!}

@@ -12,13 +12,20 @@ public class UserResponse {
     private final String name;
     private final List<RoleResponse> roles;
     private final LocalDateTime createdAt;
+    private final boolean enabled;
 
-    public UserResponse(Long id, String email, String name, List<RoleResponse> roles, LocalDateTime createdAt) {
+    public UserResponse(Long id,
+                        String email,
+                        String name,
+                        List<RoleResponse> roles,
+                        LocalDateTime createdAt,
+                        boolean enabled) {
         this.id = id;
         this.email = email;
         this.name = name;
         this.roles = roles;
         this.createdAt = createdAt;
+        this.enabled = enabled;
     }
 
     public Long getId() {
@@ -39,5 +46,9 @@ public class UserResponse {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 }

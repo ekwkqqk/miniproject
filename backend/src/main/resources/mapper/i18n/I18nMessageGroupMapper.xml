@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.i18n.domain.I18nMessageGroupRepository">
+
+    <resultMap id="I18nMessageGroupResultMap" type="com.miniproject.i18n.domain.I18nMessageGroup">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="GroupColumns">
+        id, code, name, description, created_at
+    </sql>
+
+    <select id="findById" resultMap="I18nMessageGroupResultMap">
+        SELECT <include refid="GroupColumns"/>
+        FROM pjt_i18n_message_groups
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByCode" resultMap="I18nMessageGroupResultMap">
+        SELECT <include refid="GroupColumns"/>
+        FROM pjt_i18n_message_groups
+        WHERE code = #{code}
+    </select>
+
+    <select id="existsByCode" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM pjt_i18n_message_groups WHERE code = #{code})
+    </select>
+
+    <select id="findAllByOrderByIdAsc" resultMap="I18nMessageGroupResultMap">
+        SELECT <include refid="GroupColumns"/>
+        FROM pjt_i18n_message_groups
+        ORDER BY id ASC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_i18n_message_groups (code, name, description, created_at)
+        VALUES (#{code}, #{name}, #{description}, #{createdAt})
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_i18n_message_groups
+        SET code = #{code},
+            name = #{name},
+            description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_i18n_message_groups WHERE id = #{id}
+    </delete>
+
+</mapper>

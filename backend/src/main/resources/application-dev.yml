@@ -4,25 +4,30 @@ spring:
     username: postgres
     password: admin
     driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-production-use-at-least-32-characters}
+    access-expiration-ms: 900000
+    refresh-expiration-ms: 604800000
+  mail:
+    enabled: false
+  seed:
+    system-admin-password: ${SYSTEM_ADMIN_PASSWORD:Admin123!}
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    default-executor-type: reuse
 
 springdoc:
   api-docs:
     enabled: true
   swagger-ui:
     enabled: true
-
-# 로컬 기본: 실제 발송 없이 로그 출력 (MAIL_ENABLED=true + spring.mail.* 설정 시 SMTP 발송)
-app:
-  mail:
-    enabled: false
 
 # 실제 SMTP 사용 예시 (필요 시 주석 해제)
 # spring:

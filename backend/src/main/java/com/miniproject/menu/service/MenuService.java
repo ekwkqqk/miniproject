@@ -168,6 +168,7 @@ public class MenuService {
         if (request.getSortOrder() != null) {
             menu.changeSortOrder(request.getSortOrder());
         }
+        menuRepository.save(menu);
 
         menuRoleButtonRepository.deleteByMenuId(menuId);
         menuRoleRepository.deleteByMenuId(menuId);
@@ -218,6 +219,7 @@ public class MenuService {
                 }
             }
             sibling.changeSortOrder(order++);
+            menuRepository.save(sibling);
         }
         return getAllMenus();
     }

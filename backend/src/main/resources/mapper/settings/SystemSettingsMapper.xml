@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.settings.domain.SystemSettingsRepository">
+
+    <resultMap id="SystemSettingsResultMap" type="com.miniproject.settings.domain.SystemSettings">
+        <id property="id" column="id"/>
+        <result property="themePrimaryColor" column="theme_primary_color"/>
+        <result property="passwordChangePeriodDays" column="password_change_period_days"/>
+        <result property="passwordMinLength" column="password_min_length"/>
+        <result property="defaultRoleCodes" column="default_role_codes"/>
+        <result property="allowMultiLogin" column="allow_multi_login"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="SystemSettingsResultMap">
+        SELECT id, theme_primary_color, password_change_period_days, password_min_length,
+               default_role_codes, allow_multi_login, updated_at
+        FROM pjt_system_settings
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO pjt_system_settings (
+            id, theme_primary_color, password_change_period_days, password_min_length,
+            default_role_codes, allow_multi_login, updated_at
+        ) VALUES (
+            #{id}, #{themePrimaryColor}, #{passwordChangePeriodDays}, #{passwordMinLength},
+            #{defaultRoleCodesRaw}, #{allowMultiLogin}, #{updatedAt}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_system_settings
+        SET theme_primary_color = #{themePrimaryColor},
+            password_change_period_days = #{passwordChangePeriodDays},
+            password_min_length = #{passwordMinLength},
+            default_role_codes = #{defaultRoleCodesRaw},
+            allow_multi_login = #{allowMultiLogin},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

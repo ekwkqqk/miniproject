@@ -2,51 +2,18 @@ package com.miniproject.menu.domain;
 
 import com.miniproject.role.domain.Role;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-
-@Entity
-@Table(name = "menu_role_buttons", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_menu_role_button", columnNames = {"menu_id", "role_id"})
-})
 public class MenuRoleButton {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "menu_id", nullable = false)
+    private Long menuId;
+    private Long roleId;
     private Menu menu;
-
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "role_id", nullable = false)
     private Role role;
-
-    @Column(nullable = false)
     private boolean canRead;
-
-    @Column(nullable = false)
     private boolean canUpdate;
-
-    @Column(nullable = false)
     private boolean canDelete;
-
-    @Column(nullable = false)
     private boolean canUpload;
-
-    @Column(nullable = false)
     private boolean canDownload;
-
-    @Column(nullable = false)
     private boolean canOther;
 
     protected MenuRoleButton() {
@@ -57,6 +24,8 @@ public class MenuRoleButton {
                           boolean canUpload, boolean canDownload, boolean canOther) {
         this.menu = menu;
         this.role = role;
+        this.menuId = menu != null ? menu.getId() : null;
+        this.roleId = role != null ? role.getId() : null;
         this.canRead = canRead;
         this.canUpdate = canUpdate;
         this.canDelete = canDelete;
@@ -79,35 +48,89 @@ public class MenuRoleButton {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getMenuId() {
+        return menuId;
+    }
+
+    public void setMenuId(Long menuId) {
+        this.menuId = menuId;
+    }
+
+    public Long getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(Long roleId) {
+        this.roleId = roleId;
+    }
+
     public Menu getMenu() {
         return menu;
+    }
+
+    public void setMenu(Menu menu) {
+        this.menu = menu;
+        this.menuId = menu != null ? menu.getId() : this.menuId;
     }
 
     public Role getRole() {
         return role;
     }
 
+    public void setRole(Role role) {
+        this.role = role;
+        this.roleId = role != null ? role.getId() : this.roleId;
+    }
+
     public boolean isCanRead() {
         return canRead;
+    }
+
+    public void setCanRead(boolean canRead) {
+        this.canRead = canRead;
     }
 
     public boolean isCanUpdate() {
         return canUpdate;
     }
 
+    public void setCanUpdate(boolean canUpdate) {
+        this.canUpdate = canUpdate;
+    }
+
     public boolean isCanDelete() {
         return canDelete;
+    }
+
+    public void setCanDelete(boolean canDelete) {
+        this.canDelete = canDelete;
     }
 
     public boolean isCanUpload() {
         return canUpload;
     }
 
+    public void setCanUpload(boolean canUpload) {
+        this.canUpload = canUpload;
+    }
+
     public boolean isCanDownload() {
         return canDownload;
     }
 
+    public void setCanDownload(boolean canDownload) {
+        this.canDownload = canDownload;
+    }
+
     public boolean isCanOther() {
         return canOther;
+    }
+
+    public void setCanOther(boolean canOther) {
+        this.canOther = canOther;
     }
 }

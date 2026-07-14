@@ -1,35 +1,12 @@
 package com.miniproject.i18n.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-
-@Entity
-@Table(name = "i18n_message_texts", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_i18n_message_texts", columnNames = {"message_id", "locale_id"})
-})
 public class I18nMessageText {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "message_id", nullable = false)
+    private Long messageId;
+    private Long localeId;
     private I18nMessage message;
-
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "locale_id", nullable = false)
     private I18nLocale locale;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
     private String text;
 
     protected I18nMessageText() {
@@ -38,6 +15,8 @@ public class I18nMessageText {
     public I18nMessageText(I18nMessage message, I18nLocale locale, String text) {
         this.message = message;
         this.locale = locale;
+        this.messageId = message != null ? message.getId() : null;
+        this.localeId = locale != null ? locale.getId() : null;
         this.text = text;
     }
 
@@ -45,16 +24,50 @@ public class I18nMessageText {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(Long messageId) {
+        this.messageId = messageId;
+    }
+
+    public Long getLocaleId() {
+        return localeId;
+    }
+
+    public void setLocaleId(Long localeId) {
+        this.localeId = localeId;
+    }
+
     public I18nMessage getMessage() {
         return message;
+    }
+
+    public void setMessage(I18nMessage message) {
+        this.message = message;
+        this.messageId = message != null ? message.getId() : this.messageId;
     }
 
     public I18nLocale getLocale() {
         return locale;
     }
 
+    public void setLocale(I18nLocale locale) {
+        this.locale = locale;
+        this.localeId = locale != null ? locale.getId() : this.localeId;
+    }
+
     public String getText() {
         return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 
     public void changeText(String text) {

@@ -89,6 +89,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."));
 
+        assertUserEnabled(user);
         SystemSettings settings = systemSettingsService.getOrCreate();
         assertPasswordNotExpired(user, settings);
         return createAuthTokens(user, settings);
@@ -98,6 +99,7 @@ public class AuthService {
     public AuthTokens refresh(String refreshTokenValue) {
         RefreshToken refreshToken = refreshTokenService.validateRefreshToken(refreshTokenValue);
         User user = refreshToken.getUser();
+        assertUserEnabled(user);
 
         refreshTokenService.revoke(refreshToken);
         SystemSettings settings = systemSettingsService.getOrCreate();
@@ -116,6 +118,12 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateToken(user.getEmail());
         String refreshToken = refreshTokenService.createRefreshToken(user);
         return new AuthTokens(accessToken, refreshToken, toUserResponse(user));
+    }
+
+    private void assertUserEnabled(User user) {
+        if (user == null || !user.isEnabled()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "비활성화된 계정입니다. 관리자에게 문의하세요.");
+        }
     }
 
     private void assertPasswordNotExpired(User user, SystemSettings settings) {
@@ -152,6 +160,7 @@ public class AuthService {
         }
 
         user.changePassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
         refreshTokenService.revokeAllActiveSessions(user.getId());
     }
 
@@ -160,6 +169,6 @@ public class AuthService {
                 .map(UserRole::getRole)
                 .map(RoleResponse::from)
                 .toList();
-        return new UserResponse(user.getId(), user.getEmail(), user.getName(), roles, user.getCreatedAt());
+        return new UserResponse(user.getId(), user.getEmail(), user.getName(), roles, user.getCreatedAt(), user.isEnabled());
     }
 }

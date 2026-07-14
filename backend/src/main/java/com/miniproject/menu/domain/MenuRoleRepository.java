@@ -1,27 +1,36 @@
 package com.miniproject.menu.domain;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Optional;
 
-public interface MenuRoleRepository extends JpaRepository<MenuRole, Long> {
+@Mapper
+public interface MenuRoleRepository {
+
+    Optional<MenuRole> findById(Long id);
 
     List<MenuRole> findByMenuId(Long menuId);
 
-    @Query("""
-            select distinct mr.menu from MenuRole mr
-            where mr.role.id in :roleIds
-            """)
     List<Menu> findMenusByRoleIds(@Param("roleIds") List<Long> roleIds);
 
-    @Modifying
-    @Query("delete from MenuRole mr where mr.menu.id = :menuId")
     void deleteByMenuId(@Param("menuId") Long menuId);
 
-    @Modifying
-    @Query("delete from MenuRole mr where mr.role.id = :roleId")
     void deleteByRoleId(@Param("roleId") Long roleId);
+
+    int insert(MenuRole menuRole);
+
+    int deleteById(Long id);
+
+    default MenuRole save(MenuRole menuRole) {
+        if (menuRole.getId() == null) {
+            insert(menuRole);
+        }
+        return menuRole;
+    }
+
+    default void delete(MenuRole menuRole) {
+        deleteById(menuRole.getId());
+    }
 }

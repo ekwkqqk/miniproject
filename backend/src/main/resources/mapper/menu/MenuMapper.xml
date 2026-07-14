@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.menu.domain.MenuRepository">
+
+    <resultMap id="MenuResultMap" type="com.miniproject.menu.domain.Menu">
+        <id property="id" column="id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="name" column="name"/>
+        <result property="nameI18nKey" column="name_i18n_key"/>
+        <result property="url" column="url"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="MenuColumns">
+        id, parent_id, name, name_i18n_key, url, sort_order, created_at
+    </sql>
+
+    <select id="findById" resultMap="MenuResultMap">
+        SELECT <include refid="MenuColumns"/>
+        FROM pjt_menus
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="MenuResultMap">
+        SELECT <include refid="MenuColumns"/>
+        FROM pjt_menus
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="findAllByOrderBySortOrderAscIdAsc" resultMap="MenuResultMap">
+        SELECT <include refid="MenuColumns"/>
+        FROM pjt_menus
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="findByParent_IdOrderBySortOrderAscIdAsc" resultMap="MenuResultMap">
+        SELECT <include refid="MenuColumns"/>
+        FROM pjt_menus
+        WHERE parent_id = #{parentId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="findByUrl" resultMap="MenuResultMap">
+        SELECT <include refid="MenuColumns"/>
+        FROM pjt_menus
+        WHERE url = #{url}
+    </select>
+
+    <select id="existsByUrl" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM pjt_menus WHERE url = #{url})
+    </select>
+
+    <select id="existsByParent_Id" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM pjt_menus WHERE parent_id = #{parentId})
+    </select>
+
+    <select id="countByParent_Id" resultType="long">
+        SELECT COUNT(*) FROM pjt_menus WHERE parent_id = #{parentId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_menus (parent_id, name, name_i18n_key, url, sort_order, created_at)
+        VALUES (#{parentId}, #{name}, #{nameI18nKey}, #{url}, #{sortOrder}, #{createdAt})
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_menus
+        SET parent_id = #{parentId},
+            name = #{name},
+            name_i18n_key = #{nameI18nKey},
+            url = #{url},
+            sort_order = #{sortOrder}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_menus WHERE id = #{id}
+    </delete>
+
+</mapper>

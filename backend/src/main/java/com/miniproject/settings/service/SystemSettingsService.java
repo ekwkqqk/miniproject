@@ -61,6 +61,7 @@ public class SystemSettingsService {
                 roleCodes,
                 request.isAllowMultiLogin()
         );
+        systemSettingsRepository.save(settings);
         return SystemSettingsRequest.Response.from(settings);
     }
 

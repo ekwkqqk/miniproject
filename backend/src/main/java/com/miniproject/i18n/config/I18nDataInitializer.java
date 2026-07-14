@@ -148,15 +148,16 @@ public class I18nDataInitializer {
             return;
         }
 
-        Menu folder = menuRepository.save(new Menu("다국어 관리", null, 90, null));
+        Menu folder = new Menu("다국어 관리", null, 90, null);
         folder.changeNameI18nKey("menu.i18n");
+        folder = menuRepository.save(folder);
         createLeaf(folder, "로케일 관리", "/admin/i18n/locales", 1, systemAdmin);
         createLeaf(folder, "메시지 그룹", "/admin/i18n/groups", 2, systemAdmin);
         createLeaf(folder, "메시지 관리", "/admin/i18n/messages", 3, systemAdmin);
     }
 
     private void createLeaf(Menu parent, String name, String url, int sortOrder, Role role) {
-        Menu menu = menuRepository.save(new Menu(name, url, sortOrder, parent));
+        Menu menu = new Menu(name, url, sortOrder, parent);
         String i18nKey = switch (url) {
             case "/admin/i18n/locales" -> "menu.locales";
             case "/admin/i18n/groups" -> "menu.groups";
@@ -166,6 +167,7 @@ public class I18nDataInitializer {
         if (i18nKey != null) {
             menu.changeNameI18nKey(i18nKey);
         }
+        menu = menuRepository.save(menu);
         menuRoleRepository.save(new MenuRole(menu, role));
         menuRoleButtonRepository.save(new MenuRoleButton(
                 menu, role, true, true, true, false, false, false

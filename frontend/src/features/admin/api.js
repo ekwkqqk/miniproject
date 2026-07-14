@@ -36,6 +36,14 @@ export function getUsers() {
   return client.get('/admin/users')
 }
 
+export function createUser(payload) {
+  return client.post('/admin/users', payload)
+}
+
 export function updateUserRoles(userId, roleIds) {
   return client.put(`/admin/users/${userId}/roles`, { roleIds })
+}
+
+export function updateUserEnabled(userId, enabled) {
+  return client.put(`/admin/users/${userId}/enabled`, { enabled })
 }

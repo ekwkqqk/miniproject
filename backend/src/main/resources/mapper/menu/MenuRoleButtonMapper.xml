@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.menu.domain.MenuRoleButtonRepository">
+
+    <resultMap id="RoleResultMap" type="com.miniproject.role.domain.Role">
+        <id property="id" column="r_id"/>
+        <result property="code" column="r_code"/>
+        <result property="name" column="r_name"/>
+        <result property="description" column="r_description"/>
+        <result property="createdAt" column="r_created_at"/>
+    </resultMap>
+
+    <resultMap id="MenuRoleButtonWithRoleMap" type="com.miniproject.menu.domain.MenuRoleButton">
+        <id property="id" column="id"/>
+        <result property="menuId" column="menu_id"/>
+        <result property="roleId" column="role_id"/>
+        <result property="canRead" column="can_read"/>
+        <result property="canUpdate" column="can_update"/>
+        <result property="canDelete" column="can_delete"/>
+        <result property="canUpload" column="can_upload"/>
+        <result property="canDownload" column="can_download"/>
+        <result property="canOther" column="can_other"/>
+        <association property="role" resultMap="RoleResultMap"/>
+    </resultMap>
+
+    <sql id="ButtonSelect">
+        mrb.id, mrb.menu_id, mrb.role_id,
+        mrb.can_read, mrb.can_update, mrb.can_delete,
+        mrb.can_upload, mrb.can_download, mrb.can_other,
+        r.id AS r_id, r.code AS r_code, r.name AS r_name,
+        r.description AS r_description, r.created_at AS r_created_at
+    </sql>
+
+    <select id="findById" resultMap="MenuRoleButtonWithRoleMap">
+        SELECT <include refid="ButtonSelect"/>
+        FROM pjt_menu_role_buttons mrb
+        JOIN pjt_roles r ON r.id = mrb.role_id
+        WHERE mrb.id = #{id}
+    </select>
+
+    <select id="findByMenuId" resultMap="MenuRoleButtonWithRoleMap">
+        SELECT <include refid="ButtonSelect"/>
+        FROM pjt_menu_role_buttons mrb
+        JOIN pjt_roles r ON r.id = mrb.role_id
+        WHERE mrb.menu_id = #{menuId}
+        ORDER BY mrb.id ASC
+    </select>
+
+    <select id="findByMenuIdAndRoleIdIn" resultMap="MenuRoleButtonWithRoleMap">
+        SELECT <include refid="ButtonSelect"/>
+        FROM pjt_menu_role_buttons mrb
+        JOIN pjt_roles r ON r.id = mrb.role_id
+        WHERE mrb.menu_id = #{menuId}
+          AND mrb.role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+        ORDER BY mrb.id ASC
+    </select>
+
+    <select id="findByMenuIdAndRoleId" resultMap="MenuRoleButtonWithRoleMap">
+        SELECT <include refid="ButtonSelect"/>
+        FROM pjt_menu_role_buttons mrb
+        JOIN pjt_roles r ON r.id = mrb.role_id
+        WHERE mrb.menu_id = #{menuId}
+          AND mrb.role_id = #{roleId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_menu_role_buttons (
+            menu_id, role_id, can_read, can_update, can_delete,
+            can_upload, can_download, can_other
+        ) VALUES (
+            #{menuId}, #{roleId}, #{canRead}, #{canUpdate}, #{canDelete},
+            #{canUpload}, #{canDownload}, #{canOther}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_menu_role_buttons
+        SET can_read = #{canRead},
+            can_update = #{canUpdate},
+            can_delete = #{canDelete},
+            can_upload = #{canUpload},
+            can_download = #{canDownload},
+            can_other = #{canOther}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByMenuId">
+        DELETE FROM pjt_menu_role_buttons WHERE menu_id = #{menuId}
+    </delete>
+
+    <delete id="deleteByRoleId">
+        DELETE FROM pjt_menu_role_buttons WHERE role_id = #{roleId}
+    </delete>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_menu_role_buttons WHERE id = #{id}
+    </delete>
+
+</mapper>

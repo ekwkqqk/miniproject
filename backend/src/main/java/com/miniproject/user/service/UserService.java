@@ -35,7 +35,7 @@ public class UserService implements UserDetailsService {
                 .map(UserRole::getRole)
                 .map(RoleResponse::from)
                 .toList();
-        return new UserResponse(user.getId(), user.getEmail(), user.getName(), roles, user.getCreatedAt());
+        return new UserResponse(user.getId(), user.getEmail(), user.getName(), roles, user.getCreatedAt(), user.isEnabled());
     }
 
     @Override
@@ -51,6 +51,7 @@ public class UserService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword())
+                .disabled(!user.isEnabled())
                 .roles(roleCodes)
                 .build();
     }

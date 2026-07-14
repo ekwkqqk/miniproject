@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.menu.domain.MenuRoleRepository">
+
+    <resultMap id="RoleResultMap" type="com.miniproject.role.domain.Role">
+        <id property="id" column="r_id"/>
+        <result property="code" column="r_code"/>
+        <result property="name" column="r_name"/>
+        <result property="description" column="r_description"/>
+        <result property="createdAt" column="r_created_at"/>
+    </resultMap>
+
+    <resultMap id="MenuRoleWithRoleMap" type="com.miniproject.menu.domain.MenuRole">
+        <id property="id" column="id"/>
+        <result property="menuId" column="menu_id"/>
+        <result property="roleId" column="role_id"/>
+        <association property="role" resultMap="RoleResultMap"/>
+    </resultMap>
+
+    <resultMap id="MenuResultMap" type="com.miniproject.menu.domain.Menu">
+        <id property="id" column="m_id"/>
+        <result property="parentId" column="m_parent_id"/>
+        <result property="name" column="m_name"/>
+        <result property="nameI18nKey" column="m_name_i18n_key"/>
+        <result property="url" column="m_url"/>
+        <result property="sortOrder" column="m_sort_order"/>
+        <result property="createdAt" column="m_created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="MenuRoleWithRoleMap">
+        SELECT mr.id, mr.menu_id, mr.role_id,
+               r.id AS r_id, r.code AS r_code, r.name AS r_name,
+               r.description AS r_description, r.created_at AS r_created_at
+        FROM pjt_menu_roles mr
+        JOIN pjt_roles r ON r.id = mr.role_id
+        WHERE mr.id = #{id}
+    </select>
+
+    <select id="findByMenuId" resultMap="MenuRoleWithRoleMap">
+        SELECT mr.id, mr.menu_id, mr.role_id,
+               r.id AS r_id, r.code AS r_code, r.name AS r_name,
+               r.description AS r_description, r.created_at AS r_created_at
+        FROM pjt_menu_roles mr
+        JOIN pjt_roles r ON r.id = mr.role_id
+        WHERE mr.menu_id = #{menuId}
+        ORDER BY mr.id ASC
+    </select>
+
+    <select id="findMenusByRoleIds" resultMap="MenuResultMap">
+        SELECT DISTINCT m.id AS m_id, m.parent_id AS m_parent_id, m.name AS m_name,
+               m.name_i18n_key AS m_name_i18n_key, m.url AS m_url,
+               m.sort_order AS m_sort_order, m.created_at AS m_created_at
+        FROM pjt_menu_roles mr
+        JOIN pjt_menus m ON m.id = mr.menu_id
+        WHERE mr.role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+        ORDER BY m.sort_order ASC, m.id ASC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_menu_roles (menu_id, role_id)
+        VALUES (#{menuId}, #{roleId})
+    </insert>
+
+    <delete id="deleteByMenuId">
+        DELETE FROM pjt_menu_roles WHERE menu_id = #{menuId}
+    </delete>
+
+    <delete id="deleteByRoleId">
+        DELETE FROM pjt_menu_roles WHERE role_id = #{roleId}
+    </delete>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_menu_roles WHERE id = #{id}
+    </delete>
+
+</mapper>

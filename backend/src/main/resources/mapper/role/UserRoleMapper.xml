@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.role.domain.UserRoleRepository">
+
+    <resultMap id="RoleResultMap" type="com.miniproject.role.domain.Role">
+        <id property="id" column="r_id"/>
+        <result property="code" column="r_code"/>
+        <result property="name" column="r_name"/>
+        <result property="description" column="r_description"/>
+        <result property="createdAt" column="r_created_at"/>
+    </resultMap>
+
+    <resultMap id="UserRoleWithRoleMap" type="com.miniproject.role.domain.UserRole">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="roleId" column="role_id"/>
+        <association property="role" resultMap="RoleResultMap"/>
+    </resultMap>
+
+    <select id="findById" resultMap="UserRoleWithRoleMap">
+        SELECT ur.id, ur.user_id, ur.role_id,
+               r.id AS r_id, r.code AS r_code, r.name AS r_name,
+               r.description AS r_description, r.created_at AS r_created_at
+        FROM pjt_user_roles ur
+        JOIN pjt_roles r ON r.id = ur.role_id
+        WHERE ur.id = #{id}
+    </select>
+
+    <select id="findByUserId" resultMap="UserRoleWithRoleMap">
+        SELECT ur.id, ur.user_id, ur.role_id,
+               r.id AS r_id, r.code AS r_code, r.name AS r_name,
+               r.description AS r_description, r.created_at AS r_created_at
+        FROM pjt_user_roles ur
+        JOIN pjt_roles r ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        ORDER BY ur.id ASC
+    </select>
+
+    <select id="findRolesByUserEmail" resultMap="RoleResultMap">
+        SELECT r.id AS r_id, r.code AS r_code, r.name AS r_name,
+               r.description AS r_description, r.created_at AS r_created_at
+        FROM pjt_user_roles ur
+        JOIN pjt_users u ON u.id = ur.user_id
+        JOIN pjt_roles r ON r.id = ur.role_id
+        WHERE u.email = #{email}
+        ORDER BY r.id ASC
+    </select>
+
+    <select id="findRoleCodesByUserEmail" resultType="string">
+        SELECT r.code
+        FROM pjt_user_roles ur
+        JOIN pjt_users u ON u.id = ur.user_id
+        JOIN pjt_roles r ON r.id = ur.role_id
+        WHERE u.email = #{email}
+        ORDER BY r.id ASC
+    </select>
+
+    <select id="existsByUser_EmailAndRole_Code" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM pjt_user_roles ur
+            JOIN pjt_users u ON u.id = ur.user_id
+            JOIN pjt_roles r ON r.id = ur.role_id
+            WHERE u.email = #{email}
+              AND r.code = #{roleCode}
+        )
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_user_roles (user_id, role_id)
+        VALUES (#{userId}, #{roleId})
+    </insert>
+
+    <delete id="deleteByUserId">
+        DELETE FROM pjt_user_roles WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteByRoleId">
+        DELETE FROM pjt_user_roles WHERE role_id = #{roleId}
+    </delete>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_user_roles WHERE id = #{id}
+    </delete>
+
+</mapper>

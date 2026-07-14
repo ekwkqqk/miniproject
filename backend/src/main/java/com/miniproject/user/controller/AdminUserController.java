@@ -1,6 +1,8 @@
 package com.miniproject.user.controller;
 
 import com.miniproject.common.ApiResponse;
+import com.miniproject.user.dto.CreateUserRequest;
+import com.miniproject.user.dto.UpdateUserEnabledRequest;
 import com.miniproject.user.dto.UpdateUserRolesRequest;
 import com.miniproject.user.dto.UserResponse;
 import com.miniproject.user.service.AdminUserService;
@@ -8,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +33,11 @@ public class AdminUserController {
         return ApiResponse.success(adminUserService.getAllUsers());
     }
 
+    @PostMapping
+    public ApiResponse<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
+        return ApiResponse.success(adminUserService.createUser(request), "사용자가 추가되었습니다.");
+    }
+
     @PutMapping("/{userId}/roles")
     public ApiResponse<UserResponse> updateUserRoles(@PathVariable Long userId,
                                                      @Valid @RequestBody UpdateUserRolesRequest request,
@@ -37,6 +45,17 @@ public class AdminUserController {
         return ApiResponse.success(
                 adminUserService.updateUserRoles(userId, request, adminEmail),
                 "사용자 Role이 변경되었습니다."
+        );
+    }
+
+    @PutMapping("/{userId}/enabled")
+    public ApiResponse<UserResponse> updateUserEnabled(@PathVariable Long userId,
+                                                       @Valid @RequestBody UpdateUserEnabledRequest request,
+                                                       @AuthenticationPrincipal String adminEmail) {
+        boolean enabled = Boolean.TRUE.equals(request.getEnabled());
+        return ApiResponse.success(
+                adminUserService.updateUserEnabled(userId, request, adminEmail),
+                enabled ? "계정이 활성화되었습니다." : "계정이 비활성화되었습니다."
         );
     }
 }

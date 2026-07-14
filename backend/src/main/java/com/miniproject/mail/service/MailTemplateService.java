@@ -70,6 +70,7 @@ public class MailTemplateService {
                 request.getHtml() == null || request.getHtml(),
                 request.getEnabled() == null || request.getEnabled()
         );
+        mailTemplateRepository.save(template);
         return MailTemplateRequest.Response.from(template);
     }
 

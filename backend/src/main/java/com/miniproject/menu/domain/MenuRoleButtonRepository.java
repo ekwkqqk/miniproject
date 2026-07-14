@@ -1,26 +1,44 @@
 package com.miniproject.menu.domain;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface MenuRoleButtonRepository extends JpaRepository<MenuRoleButton, Long> {
+@Mapper
+public interface MenuRoleButtonRepository {
+
+    Optional<MenuRoleButton> findById(Long id);
 
     List<MenuRoleButton> findByMenuId(Long menuId);
 
-    List<MenuRoleButton> findByMenuIdAndRoleIdIn(Long menuId, List<Long> roleIds);
+    List<MenuRoleButton> findByMenuIdAndRoleIdIn(@Param("menuId") Long menuId,
+                                                 @Param("roleIds") List<Long> roleIds);
 
-    Optional<MenuRoleButton> findByMenuIdAndRoleId(Long menuId, Long roleId);
+    Optional<MenuRoleButton> findByMenuIdAndRoleId(@Param("menuId") Long menuId,
+                                                   @Param("roleId") Long roleId);
 
-    @Modifying
-    @Query("delete from MenuRoleButton mrb where mrb.menu.id = :menuId")
     void deleteByMenuId(@Param("menuId") Long menuId);
 
-    @Modifying
-    @Query("delete from MenuRoleButton mrb where mrb.role.id = :roleId")
     void deleteByRoleId(@Param("roleId") Long roleId);
+
+    int insert(MenuRoleButton button);
+
+    int update(MenuRoleButton button);
+
+    int deleteById(Long id);
+
+    default MenuRoleButton save(MenuRoleButton button) {
+        if (button.getId() == null) {
+            insert(button);
+        } else {
+            update(button);
+        }
+        return button;
+    }
+
+    default void delete(MenuRoleButton button) {
+        deleteById(button.getId());
+    }
 }

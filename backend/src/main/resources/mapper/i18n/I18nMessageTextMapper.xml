@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.i18n.domain.I18nMessageTextRepository">
+
+    <resultMap id="LocaleResultMap" type="com.miniproject.i18n.domain.I18nLocale">
+        <id property="id" column="l_id"/>
+        <result property="code" column="l_code"/>
+        <result property="name" column="l_name"/>
+        <result property="enabled" column="l_enabled"/>
+        <result property="sortOrder" column="l_sort_order"/>
+        <result property="createdAt" column="l_created_at"/>
+    </resultMap>
+
+    <resultMap id="GroupResultMap" type="com.miniproject.i18n.domain.I18nMessageGroup">
+        <id property="id" column="g_id"/>
+        <result property="code" column="g_code"/>
+        <result property="name" column="g_name"/>
+        <result property="description" column="g_description"/>
+        <result property="createdAt" column="g_created_at"/>
+    </resultMap>
+
+    <resultMap id="MessageWithGroupMap" type="com.miniproject.i18n.domain.I18nMessage">
+        <id property="id" column="m_id"/>
+        <result property="groupId" column="m_group_id"/>
+        <result property="code" column="m_code"/>
+        <result property="description" column="m_description"/>
+        <result property="createdAt" column="m_created_at"/>
+        <association property="group" resultMap="GroupResultMap"/>
+    </resultMap>
+
+    <resultMap id="TextWithLocaleMap" type="com.miniproject.i18n.domain.I18nMessageText">
+        <id property="id" column="id"/>
+        <result property="messageId" column="message_id"/>
+        <result property="localeId" column="locale_id"/>
+        <result property="text" column="text"/>
+        <association property="locale" resultMap="LocaleResultMap"/>
+    </resultMap>
+
+    <resultMap id="TextBundleMap" type="com.miniproject.i18n.domain.I18nMessageText">
+        <id property="id" column="id"/>
+        <result property="messageId" column="message_id"/>
+        <result property="localeId" column="locale_id"/>
+        <result property="text" column="text"/>
+        <association property="message" resultMap="MessageWithGroupMap"/>
+        <association property="locale" resultMap="LocaleResultMap"/>
+    </resultMap>
+
+    <select id="findById" resultMap="TextWithLocaleMap">
+        SELECT t.id, t.message_id, t.locale_id, t.text,
+               l.id AS l_id, l.code AS l_code, l.name AS l_name,
+               l.enabled AS l_enabled, l.sort_order AS l_sort_order, l.created_at AS l_created_at
+        FROM pjt_i18n_message_texts t
+        JOIN pjt_i18n_locales l ON l.id = t.locale_id
+        WHERE t.id = #{id}
+    </select>
+
+    <select id="findByMessageId" resultMap="TextWithLocaleMap">
+        SELECT t.id, t.message_id, t.locale_id, t.text,
+               l.id AS l_id, l.code AS l_code, l.name AS l_name,
+               l.enabled AS l_enabled, l.sort_order AS l_sort_order, l.created_at AS l_created_at
+        FROM pjt_i18n_message_texts t
+        JOIN pjt_i18n_locales l ON l.id = t.locale_id
+        WHERE t.message_id = #{messageId}
+        ORDER BY t.id ASC
+    </select>
+
+    <select id="findByMessageIdAndLocaleId" resultMap="TextWithLocaleMap">
+        SELECT t.id, t.message_id, t.locale_id, t.text,
+               l.id AS l_id, l.code AS l_code, l.name AS l_name,
+               l.enabled AS l_enabled, l.sort_order AS l_sort_order, l.created_at AS l_created_at
+        FROM pjt_i18n_message_texts t
+        JOIN pjt_i18n_locales l ON l.id = t.locale_id
+        WHERE t.message_id = #{messageId}
+          AND t.locale_id = #{localeId}
+    </select>
+
+    <select id="findBundleByLocale" resultMap="TextBundleMap">
+        SELECT t.id, t.message_id, t.locale_id, t.text,
+               m.id AS m_id, m.group_id AS m_group_id, m.code AS m_code,
+               m.description AS m_description, m.created_at AS m_created_at,
+               g.id AS g_id, g.code AS g_code, g.name AS g_name,
+               g.description AS g_description, g.created_at AS g_created_at,
+               l.id AS l_id, l.code AS l_code, l.name AS l_name,
+               l.enabled AS l_enabled, l.sort_order AS l_sort_order, l.created_at AS l_created_at
+        FROM pjt_i18n_message_texts t
+        JOIN pjt_i18n_messages m ON m.id = t.message_id
+        JOIN pjt_i18n_message_groups g ON g.id = m.group_id
+        JOIN pjt_i18n_locales l ON l.id = t.locale_id
+        WHERE l.code = #{localeCode}
+    </select>
+
+    <select id="findBundleByLocaleAndGroup" resultMap="TextBundleMap">
+        SELECT t.id, t.message_id, t.locale_id, t.text,
+               m.id AS m_id, m.group_id AS m_group_id, m.code AS m_code,
+               m.description AS m_description, m.created_at AS m_created_at,
+               g.id AS g_id, g.code AS g_code, g.name AS g_name,
+               g.description AS g_description, g.created_at AS g_created_at,
+               l.id AS l_id, l.code AS l_code, l.name AS l_name,
+               l.enabled AS l_enabled, l.sort_order AS l_sort_order, l.created_at AS l_created_at
+        FROM pjt_i18n_message_texts t
+        JOIN pjt_i18n_messages m ON m.id = t.message_id
+        JOIN pjt_i18n_message_groups g ON g.id = m.group_id
+        JOIN pjt_i18n_locales l ON l.id = t.locale_id
+        WHERE l.code = #{localeCode}
+          AND g.code = #{groupCode}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_i18n_message_texts (message_id, locale_id, text)
+        VALUES (#{messageId}, #{localeId}, #{text})
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_i18n_message_texts
+        SET text = #{text}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByMessageId">
+        DELETE FROM pjt_i18n_message_texts WHERE message_id = #{messageId}
+    </delete>
+
+    <delete id="deleteByGroupId">
+        DELETE FROM pjt_i18n_message_texts t
+        USING pjt_i18n_messages m
+        WHERE t.message_id = m.id
+          AND m.group_id = #{groupId}
+    </delete>
+
+    <delete id="deleteByLocaleId">
+        DELETE FROM pjt_i18n_message_texts WHERE locale_id = #{localeId}
+    </delete>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_i18n_message_texts WHERE id = #{id}
+    </delete>
+
+</mapper>

@@ -1,45 +1,31 @@
 package com.miniproject.settings.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Entity
-@Table(name = "system_settings")
 public class SystemSettings {
 
     public static final long SINGLETON_ID = 1L;
 
-    @Id
     private Long id = SINGLETON_ID;
 
     /** 테마 primary 색상 (hex) */
-    @Column(nullable = false, length = 20)
     private String themePrimaryColor;
 
     /** 비밀번호 변경 주기(일). 0이면 미사용 */
-    @Column(nullable = false)
     private int passwordChangePeriodDays;
 
     /** 비밀번호 최소 길이 */
-    @Column(nullable = false)
     private int passwordMinLength;
 
     /** 회원가입 시 부여할 Role 코드들 (쉼표 구분) */
-    @Column(name = "default_role_codes", nullable = false, length = 500)
     private String defaultRoleCodes;
 
     /** true면 동일 계정 다중 로그인 허용 */
-    @Column(nullable = false)
     private boolean allowMultiLogin;
 
-    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     protected SystemSettings() {
@@ -74,16 +60,40 @@ public class SystemSettings {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getThemePrimaryColor() {
         return themePrimaryColor;
+    }
+
+    public void setThemePrimaryColor(String themePrimaryColor) {
+        this.themePrimaryColor = themePrimaryColor;
     }
 
     public int getPasswordChangePeriodDays() {
         return passwordChangePeriodDays;
     }
 
+    public void setPasswordChangePeriodDays(int passwordChangePeriodDays) {
+        this.passwordChangePeriodDays = passwordChangePeriodDays;
+    }
+
     public int getPasswordMinLength() {
         return passwordMinLength;
+    }
+
+    public void setPasswordMinLength(int passwordMinLength) {
+        this.passwordMinLength = passwordMinLength;
+    }
+
+    public String getDefaultRoleCodesRaw() {
+        return defaultRoleCodes;
+    }
+
+    public void setDefaultRoleCodes(String defaultRoleCodes) {
+        this.defaultRoleCodes = defaultRoleCodes;
     }
 
     public List<String> getDefaultRoleCodes() {
@@ -94,8 +104,16 @@ public class SystemSettings {
         return allowMultiLogin;
     }
 
+    public void setAllowMultiLogin(boolean allowMultiLogin) {
+        this.allowMultiLogin = allowMultiLogin;
+    }
+
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public static List<String> parseRoleCodes(String raw) {

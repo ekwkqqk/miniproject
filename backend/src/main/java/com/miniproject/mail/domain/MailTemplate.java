@@ -1,71 +1,29 @@
 package com.miniproject.mail.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "mail_templates", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_mail_templates_code", columnNames = "code")
-})
 public class MailTemplate {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false, length = 100)
     private String code;
-
-    @Column(nullable = false, length = 150)
     private String name;
-
-    @Column(length = 255)
     private String description;
-
     /** 발신자 이메일 */
-    @Column(nullable = false, length = 255)
     private String fromAddress;
-
     /** 발신자 표시 이름 */
-    @Column(length = 150)
     private String fromName;
-
     /** 기본 수신자 (쉼표 구분) */
-    @Column(nullable = false, columnDefinition = "TEXT")
     private String toAddresses;
-
     /** 기본 참조 (쉼표 구분) */
-    @Column(columnDefinition = "TEXT")
     private String ccAddresses;
-
     /** 기본 숨은참조 (쉼표 구분) */
-    @Column(columnDefinition = "TEXT")
     private String bccAddresses;
-
-    @Column(nullable = false, length = 500)
     private String subject;
-
-    @Column(nullable = false, columnDefinition = "TEXT")
     private String body;
-
     /** true면 HTML 본문 */
-    @Column(nullable = false)
     private boolean html;
-
-    @Column(nullable = false)
     private boolean enabled;
-
-    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     protected MailTemplate() {
@@ -114,59 +72,119 @@ public class MailTemplate {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getCode() {
         return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public String getName() {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getDescription() {
         return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getFromAddress() {
         return fromAddress;
     }
 
+    public void setFromAddress(String fromAddress) {
+        this.fromAddress = fromAddress;
+    }
+
     public String getFromName() {
         return fromName;
+    }
+
+    public void setFromName(String fromName) {
+        this.fromName = fromName;
     }
 
     public String getToAddresses() {
         return toAddresses;
     }
 
+    public void setToAddresses(String toAddresses) {
+        this.toAddresses = toAddresses;
+    }
+
     public String getCcAddresses() {
         return ccAddresses;
+    }
+
+    public void setCcAddresses(String ccAddresses) {
+        this.ccAddresses = ccAddresses;
     }
 
     public String getBccAddresses() {
         return bccAddresses;
     }
 
+    public void setBccAddresses(String bccAddresses) {
+        this.bccAddresses = bccAddresses;
+    }
+
     public String getSubject() {
         return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
     public String getBody() {
         return body;
     }
 
+    public void setBody(String body) {
+        this.body = body;
+    }
+
     public boolean isHtml() {
         return html;
+    }
+
+    public void setHtml(boolean html) {
+        this.html = html;
     }
 
     public boolean isEnabled() {
         return enabled;
     }
 
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

@@ -1,37 +1,44 @@
 package com.miniproject.i18n.domain;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface I18nMessageRepository extends JpaRepository<I18nMessage, Long> {
+@Mapper
+public interface I18nMessageRepository {
+
+    Optional<I18nMessage> findById(Long id);
 
     List<I18nMessage> findByGroupIdOrderByIdAsc(Long groupId);
 
-    Optional<I18nMessage> findByGroupIdAndCode(Long groupId, String code);
+    Optional<I18nMessage> findByGroupIdAndCode(@Param("groupId") Long groupId, @Param("code") String code);
 
-    boolean existsByGroupIdAndCode(Long groupId, String code);
+    boolean existsByGroupIdAndCode(@Param("groupId") Long groupId, @Param("code") String code);
 
-    @Modifying
-    @Query("delete from I18nMessage m where m.group.id = :groupId")
     void deleteByGroupId(@Param("groupId") Long groupId);
 
-    @Query("""
-            select m from I18nMessage m
-            join fetch m.group g
-            where g.code = :groupCode
-            order by m.id asc
-            """)
     List<I18nMessage> findByGroupCode(@Param("groupCode") String groupCode);
 
-    @Query("""
-            select m from I18nMessage m
-            join fetch m.group g
-            order by g.id asc, m.id asc
-            """)
     List<I18nMessage> findAllWithGroup();
+
+    int insert(I18nMessage message);
+
+    int update(I18nMessage message);
+
+    int deleteById(Long id);
+
+    default I18nMessage save(I18nMessage message) {
+        if (message.getId() == null) {
+            insert(message);
+        } else {
+            update(message);
+        }
+        return message;
+    }
+
+    default void delete(I18nMessage message) {
+        deleteById(message.getId());
+    }
 }

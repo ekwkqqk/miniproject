@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-schema" author="miniproject">
+        <createTable tableName="pjt_users">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_users"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_pjt_users_email"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password_changed_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="pjt_roles">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_roles"/>
+            </column>
+            <column name="code" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_pjt_roles_code"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="pjt_user_roles">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_user_roles"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="pjt_user_roles" columnNames="user_id, role_id"
+                             constraintName="uk_pjt_user_role"/>
+        <addForeignKeyConstraint baseTableName="pjt_user_roles" baseColumnNames="user_id"
+                                 referencedTableName="pjt_users" referencedColumnNames="id"
+                                 constraintName="fk_pjt_user_roles_user"/>
+        <addForeignKeyConstraint baseTableName="pjt_user_roles" baseColumnNames="role_id"
+                                 referencedTableName="pjt_roles" referencedColumnNames="id"
+                                 constraintName="fk_pjt_user_roles_role"/>
+
+        <createTable tableName="pjt_refresh_tokens">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_refresh_tokens"/>
+            </column>
+            <column name="token" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_pjt_refresh_tokens_token"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revoked" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="pjt_refresh_tokens" baseColumnNames="user_id"
+                                 referencedTableName="pjt_users" referencedColumnNames="id"
+                                 constraintName="fk_pjt_refresh_tokens_user"/>
+
+        <createTable tableName="pjt_menus">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_menus"/>
+            </column>
+            <column name="parent_id" type="BIGINT"/>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name_i18n_key" type="VARCHAR(200)"/>
+            <column name="url" type="VARCHAR(200)"/>
+            <column name="sort_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="pjt_menus" columnNames="url" constraintName="uk_pjt_menus_url"/>
+        <addForeignKeyConstraint baseTableName="pjt_menus" baseColumnNames="parent_id"
+                                 referencedTableName="pjt_menus" referencedColumnNames="id"
+                                 constraintName="fk_pjt_menus_parent"/>
+
+        <createTable tableName="pjt_menu_roles">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_menu_roles"/>
+            </column>
+            <column name="menu_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="pjt_menu_roles" columnNames="menu_id, role_id"
+                             constraintName="uk_pjt_menu_role"/>
+        <addForeignKeyConstraint baseTableName="pjt_menu_roles" baseColumnNames="menu_id"
+                                 referencedTableName="pjt_menus" referencedColumnNames="id"
+                                 constraintName="fk_pjt_menu_roles_menu"/>
+        <addForeignKeyConstraint baseTableName="pjt_menu_roles" baseColumnNames="role_id"
+                                 referencedTableName="pjt_roles" referencedColumnNames="id"
+                                 constraintName="fk_pjt_menu_roles_role"/>
+
+        <createTable tableName="pjt_menu_role_buttons">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_menu_role_buttons"/>
+            </column>
+            <column name="menu_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="can_read" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="can_update" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="can_delete" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="can_upload" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="can_download" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="can_other" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="pjt_menu_role_buttons" columnNames="menu_id, role_id"
+                             constraintName="uk_pjt_menu_role_button"/>
+        <addForeignKeyConstraint baseTableName="pjt_menu_role_buttons" baseColumnNames="menu_id"
+                                 referencedTableName="pjt_menus" referencedColumnNames="id"
+                                 constraintName="fk_pjt_menu_role_buttons_menu"/>
+        <addForeignKeyConstraint baseTableName="pjt_menu_role_buttons" baseColumnNames="role_id"
+                                 referencedTableName="pjt_roles" referencedColumnNames="id"
+                                 constraintName="fk_pjt_menu_role_buttons_role"/>
+
+        <createTable tableName="pjt_system_settings">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_system_settings"/>
+            </column>
+            <column name="theme_primary_color" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password_change_period_days" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password_min_length" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="default_role_codes" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="allow_multi_login" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="pjt_mail_templates">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_mail_templates"/>
+            </column>
+            <column name="code" type="VARCHAR(100)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_pjt_mail_templates_code"/>
+            </column>
+            <column name="name" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="from_address" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="from_name" type="VARCHAR(150)"/>
+            <column name="to_addresses" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cc_addresses" type="TEXT"/>
+            <column name="bcc_addresses" type="TEXT"/>
+            <column name="subject" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="body" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="html" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="pjt_i18n_locales">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_i18n_locales"/>
+            </column>
+            <column name="code" type="VARCHAR(20)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_pjt_i18n_locales_code"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_order" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="pjt_i18n_message_groups">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_i18n_message_groups"/>
+            </column>
+            <column name="code" type="VARCHAR(100)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_pjt_i18n_message_groups_code"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="pjt_i18n_messages">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_i18n_messages"/>
+            </column>
+            <column name="group_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="pjt_i18n_messages" columnNames="group_id, code"
+                             constraintName="uk_pjt_i18n_messages_group_code"/>
+        <addForeignKeyConstraint baseTableName="pjt_i18n_messages" baseColumnNames="group_id"
+                                 referencedTableName="pjt_i18n_message_groups" referencedColumnNames="id"
+                                 constraintName="fk_pjt_i18n_messages_group"/>
+
+        <createTable tableName="pjt_i18n_message_texts">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_i18n_message_texts"/>
+            </column>
+            <column name="message_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="locale_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="text" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="pjt_i18n_message_texts" columnNames="message_id, locale_id"
+                             constraintName="uk_pjt_i18n_message_texts"/>
+        <addForeignKeyConstraint baseTableName="pjt_i18n_message_texts" baseColumnNames="message_id"
+                                 referencedTableName="pjt_i18n_messages" referencedColumnNames="id"
+                                 constraintName="fk_pjt_i18n_message_texts_message"/>
+        <addForeignKeyConstraint baseTableName="pjt_i18n_message_texts" baseColumnNames="locale_id"
+                                 referencedTableName="pjt_i18n_locales" referencedColumnNames="id"
+                                 constraintName="fk_pjt_i18n_message_texts_locale"/>
+    </changeSet>
+
+</databaseChangeLog>

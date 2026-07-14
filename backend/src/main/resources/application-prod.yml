@@ -3,9 +3,8 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-  jpa:
-    hibernate:
-      ddl-auto: validate
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
   mail:
     host: ${MAIL_HOST}
     port: ${MAIL_PORT:587}
@@ -17,6 +16,12 @@ spring:
           auth: true
           starttls:
             enable: true
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    default-executor-type: reuse
 
 # 운영 환경에서는 Swagger / OpenAPI 문서 비활성화
 springdoc:

@@ -1,17 +1,35 @@
 package com.miniproject.auth.domain;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.Optional;
 
-public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
+@Mapper
+public interface RefreshTokenRepository {
+
+    Optional<RefreshToken> findById(Long id);
 
     Optional<RefreshToken> findByToken(String token);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update RefreshToken r set r.revoked = true where r.user.id = :userId and r.revoked = false")
     void revokeAllActiveByUserId(@Param("userId") Long userId);
+
+    int insert(RefreshToken refreshToken);
+
+    int update(RefreshToken refreshToken);
+
+    int deleteById(Long id);
+
+    default RefreshToken save(RefreshToken refreshToken) {
+        if (refreshToken.getId() == null) {
+            insert(refreshToken);
+        } else {
+            update(refreshToken);
+        }
+        return refreshToken;
+    }
+
+    default void delete(RefreshToken refreshToken) {
+        deleteById(refreshToken.getId());
+    }
 }

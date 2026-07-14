@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.i18n.domain.I18nLocaleRepository">
+
+    <resultMap id="I18nLocaleResultMap" type="com.miniproject.i18n.domain.I18nLocale">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="enabled" column="enabled"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="LocaleColumns">
+        id, code, name, enabled, sort_order, created_at
+    </sql>
+
+    <select id="findById" resultMap="I18nLocaleResultMap">
+        SELECT <include refid="LocaleColumns"/>
+        FROM pjt_i18n_locales
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByCode" resultMap="I18nLocaleResultMap">
+        SELECT <include refid="LocaleColumns"/>
+        FROM pjt_i18n_locales
+        WHERE code = #{code}
+    </select>
+
+    <select id="existsByCode" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM pjt_i18n_locales WHERE code = #{code})
+    </select>
+
+    <select id="findAllByOrderBySortOrderAscIdAsc" resultMap="I18nLocaleResultMap">
+        SELECT <include refid="LocaleColumns"/>
+        FROM pjt_i18n_locales
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="findByEnabledTrueOrderBySortOrderAscIdAsc" resultMap="I18nLocaleResultMap">
+        SELECT <include refid="LocaleColumns"/>
+        FROM pjt_i18n_locales
+        WHERE enabled = TRUE
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_i18n_locales (code, name, enabled, sort_order, created_at)
+        VALUES (#{code}, #{name}, #{enabled}, #{sortOrder}, #{createdAt})
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_i18n_locales
+        SET code = #{code},
+            name = #{name},
+            enabled = #{enabled},
+            sort_order = #{sortOrder}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_i18n_locales WHERE id = #{id}
+    </delete>
+
+</mapper>

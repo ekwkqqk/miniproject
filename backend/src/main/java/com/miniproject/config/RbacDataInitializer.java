@@ -8,14 +8,15 @@ import com.miniproject.menu.domain.MenuRoleButtonRepository;
 import com.miniproject.menu.domain.MenuRoleRepository;
 import com.miniproject.role.domain.Role;
 import com.miniproject.role.domain.RoleRepository;
-import com.miniproject.user.domain.User;
-import com.miniproject.user.domain.UserRepository;
 import com.miniproject.role.domain.UserRole;
 import com.miniproject.role.domain.UserRoleRepository;
 import com.miniproject.role.service.RoleService;
+import com.miniproject.user.domain.User;
+import com.miniproject.user.domain.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,39 +25,43 @@ import java.util.List;
 @Component
 public class RbacDataInitializer {
 
+    public static final String SYSTEM_ADMIN_EMAIL = "admin@system.local";
+
     private final RoleRepository roleRepository;
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
     private final MenuRepository menuRepository;
     private final MenuRoleRepository menuRoleRepository;
     private final MenuRoleButtonRepository menuRoleButtonRepository;
-    private final JdbcTemplate jdbcTemplate;
+    private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final String systemAdminPassword;
 
     public RbacDataInitializer(RoleRepository roleRepository,
-                               UserRepository userRepository,
-                               UserRoleRepository userRoleRepository,
                                MenuRepository menuRepository,
                                MenuRoleRepository menuRoleRepository,
                                MenuRoleButtonRepository menuRoleButtonRepository,
-                               JdbcTemplate jdbcTemplate) {
+                               UserRepository userRepository,
+                               UserRoleRepository userRoleRepository,
+                               PasswordEncoder passwordEncoder,
+                               @Value("${app.seed.system-admin-password:Admin123!}") String systemAdminPassword) {
         this.roleRepository = roleRepository;
-        this.userRepository = userRepository;
-        this.userRoleRepository = userRoleRepository;
         this.menuRepository = menuRepository;
         this.menuRoleRepository = menuRoleRepository;
         this.menuRoleButtonRepository = menuRoleButtonRepository;
-        this.jdbcTemplate = jdbcTemplate;
+        this.userRepository = userRepository;
+        this.userRoleRepository = userRoleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.systemAdminPassword = systemAdminPassword;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void seed() {
-        migrateSchema();
         Role systemAdmin = ensureRole(RoleService.SYSTEM_ADMIN_CODE, "시스템관리자", "시스템 전체 관리");
         Role specialUser = ensureRole("SPECIAL_USER", "특별사용자", "특별 기능 접근");
         Role userRole = ensureRole(RoleService.USER_CODE, "일반사용자", "기본 사용자");
 
-        migrateLegacyUserRoles(systemAdmin, specialUser, userRole);
+        ensureSystemAdminUser(systemAdmin);
         ensureDefaultMenus(systemAdmin, specialUser, userRole);
     }
 
@@ -65,31 +70,17 @@ public class RbacDataInitializer {
                 .orElseGet(() -> roleRepository.save(new Role(code, name, description)));
     }
 
-    private void migrateLegacyUserRoles(Role systemAdmin, Role specialUser, Role userRole) {
-        for (User user : userRepository.findAll()) {
-            if (!userRoleRepository.findByUserId(user.getId()).isEmpty()) {
-                continue;
-            }
-            String legacyRole = findLegacyRole(user.getId());
-            Role mapped = switch (legacyRole == null ? "USER" : legacyRole) {
-                case "SYSTEM_ADMIN", "ADMIN" -> systemAdmin;
-                case "SPECIAL_USER" -> specialUser;
-                default -> userRole;
-            };
-            userRoleRepository.save(new UserRole(user, mapped));
-        }
-    }
+    private void ensureSystemAdminUser(Role systemAdmin) {
+        User admin = userRepository.findByEmail(SYSTEM_ADMIN_EMAIL).orElseGet(() ->
+                userRepository.save(new User(
+                        SYSTEM_ADMIN_EMAIL,
+                        passwordEncoder.encode(systemAdminPassword),
+                        "시스템관리자"
+                ))
+        );
 
-    private String findLegacyRole(Long userId) {
-        try {
-            List<String> roles = jdbcTemplate.query(
-                    "SELECT role FROM users WHERE id = ?",
-                    (rs, rowNum) -> rs.getString("role"),
-                    userId
-            );
-            return roles.isEmpty() ? null : roles.get(0);
-        } catch (Exception ex) {
-            return null;
+        if (!userRoleRepository.existsByUser_EmailAndRole_Code(admin.getEmail(), RoleService.SYSTEM_ADMIN_CODE)) {
+            userRoleRepository.save(new UserRole(admin, systemAdmin));
         }
     }
 
@@ -118,30 +109,5 @@ public class RbacDataInitializer {
             ));
         }
         return menu;
-    }
-
-    private void migrateSchema() {
-        try {
-            jdbcTemplate.execute("ALTER TABLE users DROP COLUMN IF EXISTS role");
-        } catch (Exception ignored) {
-            // ignore if already dropped or unsupported
-        }
-        try {
-            jdbcTemplate.execute("ALTER TABLE roles DROP COLUMN IF EXISTS system_role");
-        } catch (Exception ignored) {
-            // ignore if already dropped or unsupported
-        }
-        try {
-            jdbcTemplate.execute("ALTER TABLE menus ALTER COLUMN url DROP NOT NULL");
-        } catch (Exception ignored) {
-            // ignore if already nullable
-        }
-        try {
-            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP");
-            jdbcTemplate.execute("UPDATE users SET password_changed_at = created_at WHERE password_changed_at IS NULL");
-            jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN password_changed_at SET NOT NULL");
-        } catch (Exception ignored) {
-            // ignore if already migrated
-        }
     }
 }

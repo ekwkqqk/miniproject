@@ -5,16 +5,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "app.jwt")
 public class JwtProperties {
 
-    private String secret;
-    private long accessExpirationMs;
-    private long refreshExpirationMs;
+    /** HMAC secret (min 32 chars for JJWT). */
+    private String secret = "change-me-in-production-use-at-least-32-characters";
+    private long accessExpirationMs = 900_000L;
+    private long refreshExpirationMs = 604_800_000L;
 
     public String getSecret() {
         return secret;
     }
 
     public void setSecret(String secret) {
-        this.secret = secret;
+        if (secret != null && !secret.isBlank()) {
+            this.secret = secret;
+        }
     }
 
     public long getAccessExpirationMs() {
