@@ -13,6 +13,8 @@ public interface I18nMessageTextRepository {
 
     List<I18nMessageText> findByMessageId(Long messageId);
 
+    List<I18nMessageText> findByMessageIdIn(@Param("messageIds") List<Long> messageIds);
+
     Optional<I18nMessageText> findByMessageIdAndLocaleId(@Param("messageId") Long messageId,
                                                          @Param("localeId") Long localeId);
 

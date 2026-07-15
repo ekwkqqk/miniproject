@@ -13,6 +13,8 @@ public interface UserRoleRepository {
 
     List<UserRole> findByUserId(Long userId);
 
+    List<UserRole> findByUserIdIn(@Param("userIds") List<Long> userIds);
+
     List<Role> findRolesByUserEmail(@Param("email") String email);
 
     List<String> findRoleCodesByUserEmail(@Param("email") String email);

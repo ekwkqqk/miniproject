@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminUserService {
@@ -50,8 +52,18 @@ public class AdminUserService {
 
     @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::toUserResponse)
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            return List.of();
+        }
+        List<Long> userIds = users.stream().map(User::getId).toList();
+        Map<Long, List<RoleResponse>> rolesByUserId = userRoleRepository.findByUserIdIn(userIds).stream()
+                .collect(Collectors.groupingBy(
+                        UserRole::getUserId,
+                        Collectors.mapping(ur -> RoleResponse.from(ur.getRole()), Collectors.toList())
+                ));
+        return users.stream()
+                .map(user -> toUserResponse(user, rolesByUserId.getOrDefault(user.getId(), List.of())))
                 .toList();
     }
 
@@ -128,6 +140,10 @@ public class AdminUserService {
                 .map(UserRole::getRole)
                 .map(RoleResponse::from)
                 .toList();
+        return toUserResponse(user, roles);
+    }
+
+    private UserResponse toUserResponse(User user, List<RoleResponse> roles) {
         return new UserResponse(
                 user.getId(),
                 user.getEmail(),

@@ -21,28 +21,53 @@ export const useI18nStore = defineStore('i18n', () => {
   const loaded = ref(false)
   const switching = ref(false)
 
+  let localesPromise = null
+  /** @type {Map<string, Promise<boolean>>} */
+  const messagesPromises = new Map()
+
   async function loadLocales() {
-    const { data } = await i18nApi.getEnabledLocales()
-    if (data.success) {
-      locales.value = data.data
-      if (!locales.value.some((l) => l.code === locale.value) && locales.value.length) {
-        locale.value = locales.value[0].code
-        localStorage.setItem(STORAGE_KEY, locale.value)
+    if (localesPromise) return localesPromise
+    localesPromise = (async () => {
+      try {
+        const { data } = await i18nApi.getEnabledLocales()
+        if (data.success) {
+          locales.value = data.data
+          if (!locales.value.some((l) => l.code === locale.value) && locales.value.length) {
+            locale.value = locales.value[0].code
+            localStorage.setItem(STORAGE_KEY, locale.value)
+          }
+        }
+      } finally {
+        localesPromise = null
       }
-    }
+    })()
+    return localesPromise
   }
 
   async function loadMessages(group, localeCode = locale.value) {
-    const { data } = await i18nApi.getMessageBundle(localeCode, group)
-    if (data.success) {
-      if (group) {
-        messages.value = { ...messages.value, ...data.data }
-      } else {
-        messages.value = { ...(data.data || {}) }
+    const cacheKey = `${localeCode}:${group || ''}`
+    const inflight = messagesPromises.get(cacheKey)
+    if (inflight) return inflight
+
+    const promise = (async () => {
+      try {
+        const { data } = await i18nApi.getMessageBundle(localeCode, group)
+        if (data.success) {
+          if (group) {
+            messages.value = { ...messages.value, ...data.data }
+          } else {
+            messages.value = { ...(data.data || {}) }
+          }
+          loaded.value = true
+        }
+        return data?.success === true
+      } finally {
+        messagesPromises.delete(cacheKey)
       }
-      loaded.value = true
-    }
-    return data?.success === true
+    })()
+
+    messagesPromises.set(cacheKey, promise)
+    return promise
   }
 
   /**

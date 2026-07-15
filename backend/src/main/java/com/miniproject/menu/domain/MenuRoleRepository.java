@@ -13,6 +13,8 @@ public interface MenuRoleRepository {
 
     List<MenuRole> findByMenuId(Long menuId);
 
+    List<MenuRole> findByMenuIdIn(@Param("menuIds") List<Long> menuIds);
+
     List<Menu> findMenusByRoleIds(@Param("roleIds") List<Long> roleIds);
 
     void deleteByMenuId(@Param("menuId") Long menuId);

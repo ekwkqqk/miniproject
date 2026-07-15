@@ -14,6 +14,7 @@ const welcome = computed(() =>
 )
 
 onMounted(async () => {
+  if (authStore.user) return
   try {
     await authStore.fetchMe()
   } catch (error) {

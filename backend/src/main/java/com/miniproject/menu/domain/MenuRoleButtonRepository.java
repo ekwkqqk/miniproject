@@ -13,8 +13,13 @@ public interface MenuRoleButtonRepository {
 
     List<MenuRoleButton> findByMenuId(Long menuId);
 
+    List<MenuRoleButton> findByMenuIdIn(@Param("menuIds") List<Long> menuIds);
+
     List<MenuRoleButton> findByMenuIdAndRoleIdIn(@Param("menuId") Long menuId,
                                                  @Param("roleIds") List<Long> roleIds);
+
+    List<MenuRoleButton> findByMenuIdInAndRoleIdIn(@Param("menuIds") List<Long> menuIds,
+                                                   @Param("roleIds") List<Long> roleIds);
 
     Optional<MenuRoleButton> findByMenuIdAndRoleId(@Param("menuId") Long menuId,
                                                    @Param("roleId") Long roleId);

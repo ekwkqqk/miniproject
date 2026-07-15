@@ -37,6 +37,19 @@
         ORDER BY ur.id ASC
     </select>
 
+    <select id="findByUserIdIn" resultMap="UserRoleWithRoleMap">
+        SELECT ur.id, ur.user_id, ur.role_id,
+               r.id AS r_id, r.code AS r_code, r.name AS r_name,
+               r.description AS r_description, r.created_at AS r_created_at
+        FROM pjt_user_roles ur
+        JOIN pjt_roles r ON r.id = ur.role_id
+        WHERE ur.user_id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        ORDER BY ur.user_id ASC, ur.id ASC
+    </select>
+
     <select id="findRolesByUserEmail" resultMap="RoleResultMap">
         SELECT r.id AS r_id, r.code AS r_code, r.name AS r_name,
                r.description AS r_description, r.created_at AS r_created_at

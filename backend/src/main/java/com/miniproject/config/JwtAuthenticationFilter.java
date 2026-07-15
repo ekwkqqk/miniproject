@@ -1,6 +1,5 @@
 package com.miniproject.config;
 
-import com.miniproject.role.domain.Role;
 import com.miniproject.role.domain.UserRoleRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,8 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
             String email = jwtTokenProvider.getEmail(token);
-            List<SimpleGrantedAuthority> authorities = userRoleRepository.findRolesByUserEmail(email).stream()
-                    .map(Role::getCode)
+            List<SimpleGrantedAuthority> authorities = userRoleRepository.findRoleCodesByUserEmail(email).stream()
                     .map(code -> new SimpleGrantedAuthority("ROLE_" + code))
                     .toList();
 

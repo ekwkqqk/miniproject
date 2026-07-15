@@ -65,6 +65,19 @@
         ORDER BY t.id ASC
     </select>
 
+    <select id="findByMessageIdIn" resultMap="TextWithLocaleMap">
+        SELECT t.id, t.message_id, t.locale_id, t.text,
+               l.id AS l_id, l.code AS l_code, l.name AS l_name,
+               l.enabled AS l_enabled, l.sort_order AS l_sort_order, l.created_at AS l_created_at
+        FROM pjt_i18n_message_texts t
+        JOIN pjt_i18n_locales l ON l.id = t.locale_id
+        WHERE t.message_id IN
+        <foreach collection="messageIds" item="messageId" open="(" separator="," close=")">
+            #{messageId}
+        </foreach>
+        ORDER BY t.message_id ASC, t.id ASC
+    </select>
+
     <select id="findByMessageIdAndLocaleId" resultMap="TextWithLocaleMap">
         SELECT t.id, t.message_id, t.locale_id, t.text,
                l.id AS l_id, l.code AS l_code, l.name AS l_name,

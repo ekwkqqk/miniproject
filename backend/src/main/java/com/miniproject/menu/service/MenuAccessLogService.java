@@ -13,10 +13,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class MenuAccessLogService {
@@ -32,6 +34,9 @@ public class MenuAccessLogService {
     private final MenuRepository menuRepository;
     private final UserRepository userRepository;
 
+    /** leaf menus sorted by URL length desc for prefix match */
+    private final AtomicReference<List<MenuUrlRef>> leafUrlCache = new AtomicReference<>();
+
     public MenuAccessLogService(MenuAccessLogRepository menuAccessLogRepository,
                                 MenuRepository menuRepository,
                                 UserRepository userRepository) {
@@ -40,23 +45,40 @@ public class MenuAccessLogService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Enrichment + insert on async thread so the HTTP request path pays no DB cost.
+     */
     @Async
-    public void saveAsync(MenuAccessLog accessLog) {
+    public void logAccessAsync(String email,
+                               String menuUrl,
+                               String httpMethod,
+                               String requestUri,
+                               String clientIp,
+                               String userAgent,
+                               Integer httpStatus,
+                               String accessType) {
         try {
+            MenuAccessLog accessLog = buildLog(
+                    email, menuUrl, httpMethod, requestUri, clientIp, userAgent, httpStatus, accessType
+            );
             menuAccessLogRepository.insert(accessLog);
         } catch (Exception ex) {
             log.warn("Failed to save menu access log: {}", ex.getMessage());
         }
     }
 
-    public MenuAccessLog buildLog(String email,
-                                  String menuUrl,
-                                  String httpMethod,
-                                  String requestUri,
-                                  String clientIp,
-                                  String userAgent,
-                                  Integer httpStatus,
-                                  String accessType) {
+    public void invalidateMenuUrlCache() {
+        leafUrlCache.set(null);
+    }
+
+    MenuAccessLog buildLog(String email,
+                           String menuUrl,
+                           String httpMethod,
+                           String requestUri,
+                           String clientIp,
+                           String userAgent,
+                           Integer httpStatus,
+                           String accessType) {
         MenuAccessLog accessLog = new MenuAccessLog();
         accessLog.setUserEmail(email);
         accessLog.setHttpMethod(httpMethod);
@@ -72,16 +94,10 @@ public class MenuAccessLogService {
         String normalized = normalizeMenuUrl(menuUrl);
         if (normalized != null) {
             accessLog.setMenuUrl(normalized);
-            menuRepository.findByUrl(normalized).ifPresentOrElse(menu -> {
-                accessLog.setMenuId(menu.getId());
-                accessLog.setMenuName(menu.getName());
-            }, () -> {
-                // longest prefix match for parameterized routes e.g. /demo/view/1001
-                findBestMenuMatch(normalized).ifPresent(menu -> {
-                    accessLog.setMenuId(menu.getId());
-                    accessLog.setMenuUrl(menu.getUrl());
-                    accessLog.setMenuName(menu.getName());
-                });
+            resolveMenuRef(normalized).ifPresent(ref -> {
+                accessLog.setMenuId(ref.id());
+                accessLog.setMenuUrl(ref.url());
+                accessLog.setMenuName(ref.name());
             });
         }
         return accessLog;
@@ -118,7 +134,6 @@ public class MenuAccessLogService {
         if (!value.startsWith("/")) {
             value = "/" + value;
         }
-        // drop query string
         int q = value.indexOf('?');
         if (q >= 0) {
             value = value.substring(0, q);
@@ -129,11 +144,34 @@ public class MenuAccessLogService {
         return value;
     }
 
-    private Optional<Menu> findBestMenuMatch(String path) {
-        return menuRepository.findAllByOrderBySortOrderAscIdAsc().stream()
-                .filter(menu -> !menu.isFolder() && menu.getUrl() != null)
-                .filter(menu -> path.equals(menu.getUrl()) || path.startsWith(menu.getUrl() + "/"))
-                .max((a, b) -> Integer.compare(a.getUrl().length(), b.getUrl().length()));
+    private Optional<MenuUrlRef> resolveMenuRef(String path) {
+        List<MenuUrlRef> leaves = leafMenus();
+        for (MenuUrlRef leaf : leaves) {
+            if (path.equals(leaf.url()) || path.startsWith(leaf.url() + "/")) {
+                return Optional.of(leaf);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private List<MenuUrlRef> leafMenus() {
+        List<MenuUrlRef> cached = leafUrlCache.get();
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (leafUrlCache) {
+            cached = leafUrlCache.get();
+            if (cached != null) {
+                return cached;
+            }
+            List<MenuUrlRef> loaded = menuRepository.findAllByOrderBySortOrderAscIdAsc().stream()
+                    .filter(menu -> !menu.isFolder() && menu.getUrl() != null && !menu.getUrl().isBlank())
+                    .map(menu -> new MenuUrlRef(menu.getId(), menu.getUrl(), menu.getName()))
+                    .sorted(Comparator.comparingInt((MenuUrlRef m) -> m.url().length()).reversed())
+                    .toList();
+            leafUrlCache.set(loaded);
+            return loaded;
+        }
     }
 
     private static String truncate(String value, int max) {
@@ -141,5 +179,8 @@ public class MenuAccessLogService {
             return null;
         }
         return value.length() <= max ? value : value.substring(0, max);
+    }
+
+    private record MenuUrlRef(Long id, String url, String name) {
     }
 }

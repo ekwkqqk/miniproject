@@ -43,6 +43,7 @@ public class MenuService {
     private final RoleService roleService;
     private final I18nMessageGroupRepository i18nMessageGroupRepository;
     private final I18nMessageRepository i18nMessageRepository;
+    private final MenuAccessLogService menuAccessLogService;
 
     public MenuService(MenuRepository menuRepository,
                        MenuRoleRepository menuRoleRepository,
@@ -50,7 +51,8 @@ public class MenuService {
                        UserRoleRepository userRoleRepository,
                        RoleService roleService,
                        I18nMessageGroupRepository i18nMessageGroupRepository,
-                       I18nMessageRepository i18nMessageRepository) {
+                       I18nMessageRepository i18nMessageRepository,
+                       MenuAccessLogService menuAccessLogService) {
         this.menuRepository = menuRepository;
         this.menuRoleRepository = menuRoleRepository;
         this.menuRoleButtonRepository = menuRoleButtonRepository;
@@ -58,14 +60,22 @@ public class MenuService {
         this.roleService = roleService;
         this.i18nMessageGroupRepository = i18nMessageGroupRepository;
         this.i18nMessageRepository = i18nMessageRepository;
+        this.menuAccessLogService = menuAccessLogService;
     }
 
     @Transactional(readOnly = true)
     public List<MenuResponse> getAllMenus() {
         List<Menu> menus = menuRepository.findAllByOrderBySortOrderAscIdAsc();
+        List<Long> leafIds = menus.stream()
+                .filter(menu -> !menu.isFolder())
+                .map(Menu::getId)
+                .toList();
+        Map<Long, List<MenuRole>> rolesByMenuId = groupMenuRoles(leafIds);
+        Map<Long, List<MenuRoleButton>> buttonsByMenuId = groupMenuButtons(leafIds);
+
         Map<Long, MenuResponse> nodeMap = new HashMap<>();
         for (Menu menu : menus) {
-            nodeMap.put(menu.getId(), toAdminNode(menu));
+            nodeMap.put(menu.getId(), toAdminNode(menu, rolesByMenuId, buttonsByMenuId));
         }
         return buildTree(menus, nodeMap);
     }
@@ -103,12 +113,15 @@ public class MenuService {
                 .filter(menu -> includeIds.contains(menu.getId()))
                 .toList();
 
+        Map<Long, List<MenuRoleButton>> buttonsByMenuId =
+                groupMenuButtonsForRoles(List.copyOf(accessibleLeafIds), roleIds);
+
         Map<Long, MenuResponse> nodeMap = new HashMap<>();
         for (Menu menu : includedMenus) {
             if (menu.isFolder()) {
                 nodeMap.put(menu.getId(), toFolderNode(menu));
             } else {
-                nodeMap.put(menu.getId(), toMyLeafNode(menu, roleIds));
+                nodeMap.put(menu.getId(), toMyLeafNode(menu, buttonsByMenuId.getOrDefault(menu.getId(), List.of())));
             }
         }
         return buildTree(includedMenus, nodeMap);
@@ -135,6 +148,7 @@ public class MenuService {
         menu.changeNameI18nKey(resolveNameI18nKey(request.getNameI18nKey()));
         menu = menuRepository.save(menu);
         applyRolesAndButtons(menu, request, folder);
+        menuAccessLogService.invalidateMenuUrlCache();
         return findAdminTreeNode(menu.getId());
     }
 
@@ -173,6 +187,7 @@ public class MenuService {
         menuRoleButtonRepository.deleteByMenuId(menuId);
         menuRoleRepository.deleteByMenuId(menuId);
         applyRolesAndButtons(menu, request, folder);
+        menuAccessLogService.invalidateMenuUrlCache();
         return findAdminTreeNode(menuId);
     }
 
@@ -186,6 +201,7 @@ public class MenuService {
         menuRoleButtonRepository.deleteByMenuId(menuId);
         menuRoleRepository.deleteByMenuId(menuId);
         menuRepository.delete(menu);
+        menuAccessLogService.invalidateMenuUrlCache();
     }
 
     @Transactional
@@ -221,6 +237,7 @@ public class MenuService {
             sibling.changeSortOrder(order++);
             menuRepository.save(sibling);
         }
+        menuAccessLogService.invalidateMenuUrlCache();
         return getAllMenus();
     }
 
@@ -311,15 +328,17 @@ public class MenuService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "메뉴를 찾을 수 없습니다."));
     }
 
-    private MenuResponse toAdminNode(Menu menu) {
+    private MenuResponse toAdminNode(Menu menu,
+                                     Map<Long, List<MenuRole>> rolesByMenuId,
+                                     Map<Long, List<MenuRoleButton>> buttonsByMenuId) {
         List<RoleResponse> roles = List.of();
         List<MenuResponse.MenuRoleButtonResponse> roleButtons = List.of();
         if (!menu.isFolder()) {
-            roles = menuRoleRepository.findByMenuId(menu.getId()).stream()
+            roles = rolesByMenuId.getOrDefault(menu.getId(), List.of()).stream()
                     .map(MenuRole::getRole)
                     .map(RoleResponse::from)
                     .toList();
-            roleButtons = menuRoleButtonRepository.findByMenuId(menu.getId()).stream()
+            roleButtons = buttonsByMenuId.getOrDefault(menu.getId(), List.of()).stream()
                     .map(button -> new MenuResponse.MenuRoleButtonResponse(
                             button.getRole().getId(),
                             button.getRole().getCode(),
@@ -359,9 +378,8 @@ public class MenuService {
         );
     }
 
-    private MenuResponse toMyLeafNode(Menu menu, List<Long> roleIds) {
-        List<ButtonPermissionDto> buttons = menuRoleButtonRepository.findByMenuIdAndRoleIdIn(menu.getId(), roleIds)
-                .stream()
+    private MenuResponse toMyLeafNode(Menu menu, List<MenuRoleButton> buttons) {
+        List<ButtonPermissionDto> buttonDtos = buttons.stream()
                 .map(this::toButtonDto)
                 .toList();
         return new MenuResponse(
@@ -374,9 +392,33 @@ public class MenuService {
                 false,
                 List.of(),
                 List.of(),
-                ButtonPermissionDto.merge(buttons),
+                ButtonPermissionDto.merge(buttonDtos),
                 new ArrayList<>()
         );
+    }
+
+    private Map<Long, List<MenuRole>> groupMenuRoles(List<Long> menuIds) {
+        if (menuIds.isEmpty()) {
+            return Map.of();
+        }
+        return menuRoleRepository.findByMenuIdIn(menuIds).stream()
+                .collect(Collectors.groupingBy(MenuRole::getMenuId));
+    }
+
+    private Map<Long, List<MenuRoleButton>> groupMenuButtons(List<Long> menuIds) {
+        if (menuIds.isEmpty()) {
+            return Map.of();
+        }
+        return menuRoleButtonRepository.findByMenuIdIn(menuIds).stream()
+                .collect(Collectors.groupingBy(MenuRoleButton::getMenuId));
+    }
+
+    private Map<Long, List<MenuRoleButton>> groupMenuButtonsForRoles(List<Long> menuIds, List<Long> roleIds) {
+        if (menuIds.isEmpty() || roleIds.isEmpty()) {
+            return Map.of();
+        }
+        return menuRoleButtonRepository.findByMenuIdInAndRoleIdIn(menuIds, roleIds).stream()
+                .collect(Collectors.groupingBy(MenuRoleButton::getMenuId));
     }
 
     private String resolveNameI18nKey(String rawKey) {

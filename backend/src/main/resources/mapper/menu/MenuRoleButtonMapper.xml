@@ -47,6 +47,17 @@
         ORDER BY mrb.id ASC
     </select>
 
+    <select id="findByMenuIdIn" resultMap="MenuRoleButtonWithRoleMap">
+        SELECT <include refid="ButtonSelect"/>
+        FROM pjt_menu_role_buttons mrb
+        JOIN pjt_roles r ON r.id = mrb.role_id
+        WHERE mrb.menu_id IN
+        <foreach collection="menuIds" item="menuId" open="(" separator="," close=")">
+            #{menuId}
+        </foreach>
+        ORDER BY mrb.menu_id ASC, mrb.id ASC
+    </select>
+
     <select id="findByMenuIdAndRoleIdIn" resultMap="MenuRoleButtonWithRoleMap">
         SELECT <include refid="ButtonSelect"/>
         FROM pjt_menu_role_buttons mrb
@@ -57,6 +68,21 @@
             #{roleId}
         </foreach>
         ORDER BY mrb.id ASC
+    </select>
+
+    <select id="findByMenuIdInAndRoleIdIn" resultMap="MenuRoleButtonWithRoleMap">
+        SELECT <include refid="ButtonSelect"/>
+        FROM pjt_menu_role_buttons mrb
+        JOIN pjt_roles r ON r.id = mrb.role_id
+        WHERE mrb.menu_id IN
+        <foreach collection="menuIds" item="menuId" open="(" separator="," close=")">
+            #{menuId}
+        </foreach>
+          AND mrb.role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+        ORDER BY mrb.menu_id ASC, mrb.id ASC
     </select>
 
     <select id="findByMenuIdAndRoleId" resultMap="MenuRoleButtonWithRoleMap">

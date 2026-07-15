@@ -24,18 +24,36 @@ function flattenLeaves(nodes, result = []) {
   return result
 }
 
+function buildLeafIndex(nodes) {
+  const byUrl = new Map()
+  const leaves = flattenLeaves(nodes)
+  for (const leaf of leaves) {
+    byUrl.set(leaf.url, leaf)
+  }
+  // longest URLs first for prefix matching
+  const sortedByLength = [...leaves].sort((a, b) => b.url.length - a.url.length)
+  return { byUrl, sortedByLength }
+}
+
 export const useMenuStore = defineStore('menu', () => {
   const menus = ref([])
   const loaded = ref(false)
+  let leafIndex = buildLeafIndex([])
+
+  function rebuildLeafIndex() {
+    leafIndex = buildLeafIndex(menus.value)
+  }
 
   async function fetchMyMenus() {
     try {
       const { data } = await menusApi.getMyMenus()
       if (data.success) {
         menus.value = data.data || []
+        rebuildLeafIndex()
       }
     } catch (error) {
       menus.value = []
+      rebuildLeafIndex()
       throw new Error(getErrorMessage(error))
     } finally {
       loaded.value = true
@@ -45,16 +63,14 @@ export const useMenuStore = defineStore('menu', () => {
   function clearMenus() {
     menus.value = []
     loaded.value = false
+    rebuildLeafIndex()
   }
 
   function resolveMenu(url) {
-    const leaves = flattenLeaves(menus.value)
-    const exact = leaves.find((menu) => menu.url === url)
+    const exact = leafIndex.byUrl.get(url)
     if (exact) return exact
     // /demo/view/1001 → /demo/view
-    return leaves
-      .filter((menu) => url.startsWith(`${menu.url}/`))
-      .sort((a, b) => b.url.length - a.url.length)[0] || null
+    return leafIndex.sortedByLength.find((menu) => url.startsWith(`${menu.url}/`)) || null
   }
 
   function getMenuByUrl(url) {

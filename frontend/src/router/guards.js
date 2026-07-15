@@ -3,12 +3,28 @@ import { useMenuStore } from '@/features/menu/store'
 import { useI18nStore } from '@/features/i18n/store'
 import * as menusApi from '@/features/menu/api'
 
+async function ensureI18nLoaded() {
+  const i18nStore = useI18nStore()
+  try {
+    if (!i18nStore.locales.length) {
+      await i18nStore.loadLocales()
+    }
+    if (!i18nStore.loaded) {
+      await i18nStore.loadMessages()
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export async function setupRouterGuards(router) {
   router.beforeEach(async (to) => {
     const authStore = useAuthStore()
     const menuStore = useMenuStore()
 
-    if (to.meta.requiresAuth || to.meta.guestOnly) {
+    // 로그인/가입(guestOnly)에서는 refresh를 치지 않는다.
+    // (비로그인 첫 접속 시 예상되는 401을 피함. 쿠키 세션 복원은 보호 라우트 진입 시 수행)
+    if (to.meta.requiresAuth) {
       await authStore.restoreSession()
     }
 
@@ -29,35 +45,12 @@ export async function setupRouterGuards(router) {
     }
 
     if (to.meta.requiresAuth && authStore.isAuthenticated) {
-      const i18nStore = useI18nStore()
-      try {
-        if (!i18nStore.locales.length) {
-          await i18nStore.loadLocales()
-        }
-        // table/menu 키가 없으면 번들 재로딩 (시드 반영 후 구버전 캐시 방지)
-        const msgs = i18nStore.messages || {}
-        if (!i18nStore.loaded || !msgs['table.id'] || !msgs['menu.dashboard'] || !msgs['common.changePassword'] || !msgs['common.refresh']) {
-          await i18nStore.loadMessages()
-        }
-      } catch {
-        // ignore
-      }
+      await ensureI18nLoaded()
     }
 
     // 로그인/비번변경 등 게스트 화면에서도 common 액션 문구 사용
     if (to.meta.guestOnly || to.name === 'change-password') {
-      const i18nStore = useI18nStore()
-      try {
-        if (!i18nStore.locales.length) {
-          await i18nStore.loadLocales()
-        }
-        const msgs = i18nStore.messages || {}
-        if (!i18nStore.loaded || !msgs['common.changePassword'] || !msgs['common.logout']) {
-          await i18nStore.loadMessages()
-        }
-      } catch {
-        // ignore
-      }
+      await ensureI18nLoaded()
     }
 
     if (to.meta.requiresMenu && !menuStore.canAccess(to.path)) {

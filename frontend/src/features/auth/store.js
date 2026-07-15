@@ -66,6 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (data.success) {
         setSession(data.data)
         await useMenuStore().fetchMyMenus()
+        sessionReady.value = true
       }
       return data
     } catch (error) {
@@ -79,6 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (data.success) {
         setSession(data.data)
         await useMenuStore().fetchMyMenus()
+        sessionReady.value = true
       }
       return data
     } catch (error) {

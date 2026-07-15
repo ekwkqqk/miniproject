@@ -1,6 +1,5 @@
 package com.miniproject.config;
 
-import com.miniproject.menu.domain.MenuAccessLog;
 import com.miniproject.menu.service.MenuAccessLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -55,7 +54,7 @@ public class MenuAccessLogInterceptor implements HandlerInterceptor {
             accessType = MenuAccessLogService.ACCESS_TYPE_MENU;
         }
 
-        MenuAccessLog accessLog = menuAccessLogService.buildLog(
+        menuAccessLogService.logAccessAsync(
                 email,
                 menuUrl,
                 request.getMethod(),
@@ -65,7 +64,6 @@ public class MenuAccessLogInterceptor implements HandlerInterceptor {
                 response.getStatus(),
                 accessType
         );
-        menuAccessLogService.saveAsync(accessLog);
     }
 
     private boolean shouldSkip(String uri, String method) {

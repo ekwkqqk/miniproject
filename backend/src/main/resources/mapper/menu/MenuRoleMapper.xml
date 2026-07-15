@@ -47,6 +47,19 @@
         ORDER BY mr.id ASC
     </select>
 
+    <select id="findByMenuIdIn" resultMap="MenuRoleWithRoleMap">
+        SELECT mr.id, mr.menu_id, mr.role_id,
+               r.id AS r_id, r.code AS r_code, r.name AS r_name,
+               r.description AS r_description, r.created_at AS r_created_at
+        FROM pjt_menu_roles mr
+        JOIN pjt_roles r ON r.id = mr.role_id
+        WHERE mr.menu_id IN
+        <foreach collection="menuIds" item="menuId" open="(" separator="," close=")">
+            #{menuId}
+        </foreach>
+        ORDER BY mr.menu_id ASC, mr.id ASC
+    </select>
+
     <select id="findMenusByRoleIds" resultMap="MenuResultMap">
         SELECT DISTINCT m.id AS m_id, m.parent_id AS m_parent_id, m.name AS m_name,
                m.name_i18n_key AS m_name_i18n_key, m.url AS m_url,

@@ -142,7 +142,26 @@ public class I18nService {
         List<I18nMessage> messages = groupCode == null || groupCode.isBlank()
                 ? messageRepository.findAllWithGroup()
                 : messageRepository.findByGroupCode(groupCode.trim());
-        return messages.stream().map(this::toMessageResponse).toList();
+        if (messages.isEmpty()) {
+            return List.of();
+        }
+        List<Long> messageIds = messages.stream().map(I18nMessage::getId).toList();
+        Map<Long, Map<String, String>> textsByMessageId = textRepository.findByMessageIdIn(messageIds).stream()
+                .collect(Collectors.groupingBy(
+                        I18nMessageText::getMessageId,
+                        Collectors.toMap(
+                                t -> t.getLocale().getCode(),
+                                I18nMessageText::getText,
+                                (a, b) -> a,
+                                LinkedHashMap::new
+                        )
+                ));
+        return messages.stream()
+                .map(message -> I18nMessageRequest.Response.of(
+                        message,
+                        textsByMessageId.getOrDefault(message.getId(), new LinkedHashMap<>())
+                ))
+                .toList();
     }
 
     @Transactional
