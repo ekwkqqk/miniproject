@@ -2,9 +2,14 @@
 import { onMounted, ref } from 'vue'
 import * as mailApi from '@/features/mail/api'
 import { useMenuAuth } from '@/features/menu/useMenuAuth'
+import { useI18n } from '@/features/i18n/useI18n'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import ContentPanel from '@/shared/components/ContentPanel.vue'
+import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const { canUpdate, canDelete } = useMenuAuth()
+const { tCode } = useI18n()
 const templates = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -142,44 +147,44 @@ onMounted(load)
 </script>
 
 <template>
-  <el-card>
-    <template #header>
-      <div class="header">
-        <span>메일 템플릿</span>
-        <el-button v-if="canUpdate" type="primary" @click="openCreate">템플릿 등록</el-button>
-      </div>
+  <PageLayout title="메일 템플릿" subtitle="발송 템플릿 등록·수정·테스트" :count="templates.length">
+    <template #actions>
+      <el-button v-if="canUpdate" type="primary" @click="openCreate">템플릿 등록</el-button>
     </template>
 
-    <p class="hint">
-      제목/본문에 <code>{name}</code> 형태 파라미터를 사용할 수 있습니다.
-      수신자·참조는 쉼표로 여러 명을 입력하세요. 로컬에서는 DRY-RUN(로그)으로 동작합니다.
-    </p>
+    <ContentPanel title="템플릿 목록" :loading="loading">
+      <p class="hint">
+        제목/본문에 <code>{name}</code> 형태 파라미터를 사용할 수 있습니다.
+        수신자·참조는 쉼표로 여러 명을 입력하세요. 로컬에서는 DRY-RUN(로그)으로 동작합니다.
+      </p>
+      <div class="table-scroll">
+        <el-table :data="templates" stripe border style="width: 100%">
+          <el-table-column prop="code" :label="tCode('table', 'code')" width="140" />
+          <el-table-column prop="name" :label="tCode('table', 'name')" width="160" />
+          <el-table-column :label="tCode('table', 'from')" min-width="180">
+            <template #default="{ row }">
+              {{ row.fromName ? `${row.fromName} <${row.fromAddress}>` : row.fromAddress }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="toAddresses" :label="tCode('table', 'to')" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="subject" :label="tCode('table', 'subject')" min-width="200" show-overflow-tooltip />
+          <el-table-column :label="tCode('table', 'enabled')" width="80">
+            <template #default="{ row }">
+              <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? 'Y' : 'N' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column :label="tCode('table', 'manage')" width="220" fixed="right">
+            <template #default="{ row }">
+              <el-button type="success" link @click="openSend(row)">발송</el-button>
+              <el-button v-if="canUpdate" type="primary" link @click="openEdit(row)">수정</el-button>
+              <el-button v-if="canDelete" type="danger" link @click="handleDelete(row)">삭제</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </ContentPanel>
 
-    <el-table v-loading="loading" :data="templates" style="width: 100%">
-      <el-table-column prop="code" label="코드" width="140" />
-      <el-table-column prop="name" label="이름" width="160" />
-      <el-table-column label="발신자" min-width="180">
-        <template #default="{ row }">
-          {{ row.fromName ? `${row.fromName} <${row.fromAddress}>` : row.fromAddress }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="toAddresses" label="수신자" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="subject" label="제목" min-width="200" show-overflow-tooltip />
-      <el-table-column label="사용" width="80">
-        <template #default="{ row }">
-          <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? 'Y' : 'N' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="관리" width="220" fixed="right">
-        <template #default="{ row }">
-          <el-button type="success" link @click="openSend(row)">발송</el-button>
-          <el-button v-if="canUpdate" type="primary" link @click="openEdit(row)">수정</el-button>
-          <el-button v-if="canDelete" type="danger" link @click="handleDelete(row)">삭제</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <el-dialog v-model="dialogVisible" :title="editingId ? '템플릿 수정' : '템플릿 등록'" width="720px">
+    <ResponsiveDialog v-model="dialogVisible" :title="editingId ? '템플릿 수정' : '템플릿 등록'" :width="720">
       <el-form label-position="top">
         <el-row :gutter="12">
           <el-col :span="12">
@@ -238,10 +243,10 @@ onMounted(load)
         <el-button @click="dialogVisible = false">취소</el-button>
         <el-button type="primary" @click="handleSave">저장</el-button>
       </template>
-    </el-dialog>
+    </ResponsiveDialog>
 
-    <el-dialog v-model="sendVisible" title="메일 발송 테스트" width="520px">
-      <el-form label-position="top" v-if="sendTarget">
+    <ResponsiveDialog v-model="sendVisible" title="메일 발송 테스트" :width="520">
+      <el-form v-if="sendTarget" label-position="top">
         <el-form-item label="템플릿">
           <el-input :model-value="`${sendTarget.name} (${sendTarget.code})`" disabled />
         </el-form-item>
@@ -256,16 +261,11 @@ onMounted(load)
         <el-button @click="sendVisible = false">취소</el-button>
         <el-button type="primary" @click="handleSend">발송</el-button>
       </template>
-    </el-dialog>
-  </el-card>
+    </ResponsiveDialog>
+  </PageLayout>
 </template>
 
 <style scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 .hint {
   margin: 0 0 12px;
   color: #666;

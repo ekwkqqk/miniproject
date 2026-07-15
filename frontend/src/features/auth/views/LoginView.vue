@@ -2,11 +2,13 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/store'
+import { useI18n } from '@/features/i18n/useI18n'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { tCode } = useI18n()
 const loading = ref(false)
 
 const form = reactive({
@@ -63,7 +65,7 @@ async function handleLogin() {
       </el-form>
       <p class="link">
         비밀번호를 변경하시겠어요?
-        <router-link to="/change-password">비밀번호 변경</router-link>
+        <router-link to="/change-password">{{ tCode('common', 'changePassword') }}</router-link>
       </p>
       <p class="link">
         계정이 없으신가요?

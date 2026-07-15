@@ -3,6 +3,8 @@ import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useBreakpoint } from '@/shared/composables/useBreakpoint'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import ContentPanel from '@/shared/components/ContentPanel.vue'
 import {
   CATEGORIES,
   DEMO_ITEMS,
@@ -68,19 +70,13 @@ function handleSave() {
 </script>
 
 <template>
-  <div class="page-shell">
-    <div class="page-toolbar">
-      <div>
-        <h1 class="page-toolbar__title">수정 화면</h1>
-        <p class="subtitle">폼 2열 → 모바일 1열 자동 전환 (현재: {{ device }})</p>
-      </div>
-      <div class="page-toolbar__actions">
-        <el-button :icon="Back" @click="goBack">취소</el-button>
-        <el-button type="primary" :icon="Check" @click="handleSave">저장</el-button>
-      </div>
-    </div>
+  <PageLayout title="수정 화면" :subtitle="`폼 2열 → 모바일 1열 자동 전환 (현재: ${device})`">
+    <template #actions>
+      <el-button :icon="Back" @click="goBack">취소</el-button>
+      <el-button type="primary" :icon="Check" @click="handleSave">저장</el-button>
+    </template>
 
-    <el-card v-if="source" shadow="never">
+    <ContentPanel v-if="source" title="상품 정보" :show-header="true">
       <el-form
         label-position="top"
         class="form-grid"
@@ -128,38 +124,16 @@ function handleSave() {
         </el-form-item>
       </el-form>
 
-      <div class="footer-actions">
+      <template #footer>
         <el-button @click="goBack">취소</el-button>
         <el-button type="primary" @click="handleSave">저장</el-button>
-      </div>
-    </el-card>
+      </template>
+    </ContentPanel>
 
-    <el-empty v-else description="수정할 대상을 찾을 수 없습니다.">
-      <el-button type="primary" @click="router.push({ name: 'demo-search' })">검색으로 이동</el-button>
-    </el-empty>
-  </div>
+    <ContentPanel v-else :show-header="false">
+      <el-empty description="수정할 대상을 찾을 수 없습니다.">
+        <el-button type="primary" @click="router.push({ name: 'demo-search' })">검색으로 이동</el-button>
+      </el-empty>
+    </ContentPanel>
+  </PageLayout>
 </template>
-
-<style scoped>
-.subtitle {
-  margin: 4px 0 0;
-  color: #909399;
-  font-size: 13px;
-}
-
-.footer-actions {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 16px;
-  border-top: 1px solid #ebeef5;
-}
-
-@media (max-width: 767px) {
-  .footer-actions .el-button {
-    flex: 1;
-  }
-}
-</style>

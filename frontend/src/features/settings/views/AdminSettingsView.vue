@@ -4,6 +4,8 @@ import * as settingsApi from '@/features/settings/api'
 import * as adminApi from '@/features/admin/api'
 import { useSettingsStore } from '@/features/settings/store'
 import { useMenuAuth } from '@/features/menu/useMenuAuth'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import ContentPanel from '@/shared/components/ContentPanel.vue'
 import { ElMessage } from 'element-plus'
 
 const { canUpdate } = useMenuAuth()
@@ -80,94 +82,87 @@ onMounted(load)
 </script>
 
 <template>
-  <el-card v-loading="loading">
-    <template #header>
-      <div class="header">
-        <span>시스템 설정</span>
-        <el-button v-if="canUpdate" type="primary" :loading="saving" @click="handleSave">저장</el-button>
-      </div>
+  <PageLayout title="시스템 설정" subtitle="테마·비밀번호·로그인·회원가입 기본값">
+    <template #actions>
+      <el-button v-if="canUpdate" type="primary" :loading="saving" @click="handleSave">저장</el-button>
     </template>
 
-    <el-form label-position="top" class="settings-form" :disabled="!canUpdate">
-      <el-divider content-position="left">테마</el-divider>
-      <el-form-item label="테마 색상 (Primary)">
-        <div class="theme-row">
-          <el-color-picker
-            :model-value="form.themePrimaryColor"
-            @update:model-value="onThemeInput"
-          />
-          <el-input
-            v-model="form.themePrimaryColor"
-            style="width: 140px"
-            @change="onThemeInput(form.themePrimaryColor)"
-          />
-          <div class="presets">
-            <button
-              v-for="color in presetColors"
-              :key="color"
-              type="button"
-              class="preset"
-              :style="{ background: color }"
-              :title="color"
-              @click="onThemeInput(color)"
+    <ContentPanel :loading="loading" :show-header="false">
+      <el-form label-position="top" class="settings-form" :disabled="!canUpdate">
+        <el-divider content-position="left">테마</el-divider>
+        <el-form-item label="테마 색상 (Primary)">
+          <div class="theme-row">
+            <el-color-picker
+              :model-value="form.themePrimaryColor"
+              @update:model-value="onThemeInput"
             />
+            <el-input
+              v-model="form.themePrimaryColor"
+              style="width: 140px"
+              @change="onThemeInput(form.themePrimaryColor)"
+            />
+            <div class="presets">
+              <button
+                v-for="color in presetColors"
+                :key="color"
+                type="button"
+                class="preset"
+                :style="{ background: color }"
+                :title="color"
+                @click="onThemeInput(color)"
+              />
+            </div>
           </div>
-        </div>
-        <div class="hint">Element Plus primary 색상에 반영됩니다.</div>
-      </el-form-item>
+          <div class="hint">Element Plus primary 색상에 반영됩니다.</div>
+        </el-form-item>
 
-      <el-divider content-position="left">비밀번호</el-divider>
-      <el-form-item label="비밀번호 변경 주기 (일)">
-        <el-input-number v-model="form.passwordChangePeriodDays" :min="0" :max="3650" />
-        <div class="hint">0이면 주기 만료를 검사하지 않습니다. 설정 시 로그인 시점에 만료를 확인합니다.</div>
-      </el-form-item>
-      <el-form-item label="비밀번호 최소 길이">
-        <el-input-number v-model="form.passwordMinLength" :min="4" :max="128" />
-      </el-form-item>
+        <el-divider content-position="left">비밀번호</el-divider>
+        <el-form-item label="비밀번호 변경 주기 (일)">
+          <el-input-number v-model="form.passwordChangePeriodDays" :min="0" :max="3650" />
+          <div class="hint">0이면 주기 만료를 검사하지 않습니다. 설정 시 로그인 시점에 만료를 확인합니다.</div>
+        </el-form-item>
+        <el-form-item label="비밀번호 최소 길이">
+          <el-input-number v-model="form.passwordMinLength" :min="4" :max="128" />
+        </el-form-item>
 
-      <el-divider content-position="left">회원가입</el-divider>
-      <el-form-item label="초기 Role">
-        <el-checkbox-group v-model="form.defaultRoleCodes" class="role-checks">
-          <el-checkbox
-            v-for="role in roles"
-            :key="role.id"
-            :label="role.code"
-            :value="role.code"
-          >
-            {{ role.name }} ({{ role.code }})
-          </el-checkbox>
-        </el-checkbox-group>
-        <div class="hint">회원가입 시 선택한 Role이 모두 부여됩니다. 하나 이상 선택해야 합니다.</div>
-      </el-form-item>
+        <el-divider content-position="left">회원가입</el-divider>
+        <el-form-item label="초기 Role">
+          <el-checkbox-group v-model="form.defaultRoleCodes" class="role-checks">
+            <el-checkbox
+              v-for="role in roles"
+              :key="role.id"
+              :label="role.code"
+              :value="role.code"
+            >
+              {{ role.name }} ({{ role.code }})
+            </el-checkbox>
+          </el-checkbox-group>
+          <div class="hint">회원가입 시 선택한 Role이 모두 부여됩니다. 하나 이상 선택해야 합니다.</div>
+        </el-form-item>
 
-      <el-divider content-position="left">로그인</el-divider>
-      <el-form-item label="계정 잠금 (로그인 실패 횟수)">
-        <el-input-number v-model="form.maxFailedLoginAttempts" :min="0" :max="100" />
-        <div class="hint">
-          0이면 잠금하지 않습니다. N회 연속 로그인 실패 시 계정을 비활성화합니다. 관리자가 사용자를 다시 활성화하면 해제됩니다.
-        </div>
-      </el-form-item>
-      <el-form-item label="멀티 로그인">
-        <el-switch
-          v-model="form.allowMultiLogin"
-          active-text="허용"
-          inactive-text="단일 세션만"
-        />
-        <div class="hint">
-          끄면 새 로그인 시 기존 refresh 세션을 모두 폐기합니다. (한 계정 동시 접속 제한)
-        </div>
-      </el-form-item>
-    </el-form>
-  </el-card>
+        <el-divider content-position="left">로그인</el-divider>
+        <el-form-item label="계정 잠금 (로그인 실패 횟수)">
+          <el-input-number v-model="form.maxFailedLoginAttempts" :min="0" :max="100" />
+          <div class="hint">
+            0이면 잠금하지 않습니다. N회 연속 로그인 실패 시 계정을 비활성화합니다. 관리자가 사용자를 다시 활성화하면 해제됩니다.
+          </div>
+        </el-form-item>
+        <el-form-item label="멀티 로그인">
+          <el-switch
+            v-model="form.allowMultiLogin"
+            active-text="허용"
+            inactive-text="단일 세션만"
+          />
+          <div class="hint">
+            끄면 새 로그인 시 기존 refresh 세션을 모두 폐기합니다. (한 계정 동시 접속 제한)
+          </div>
+        </el-form-item>
+      </el-form>
+    </ContentPanel>
+  </PageLayout>
 </template>
 
 <style scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .settings-form {
   max-width: min(720px, 100%);
 }

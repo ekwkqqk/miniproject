@@ -56,6 +56,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/api/auth/**", "/api/health", "/api/settings/public").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/i18n/locales", "/api/i18n/messages").permitAll();
                     if (swaggerEnabled) {
                         auth.requestMatchers(SWAGGER_PATHS).permitAll();
                     } else {

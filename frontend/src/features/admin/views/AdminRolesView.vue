@@ -2,9 +2,14 @@
 import { onMounted, ref } from 'vue'
 import * as adminApi from '@/features/admin/api'
 import { useMenuAuth } from '@/features/menu/useMenuAuth'
+import { useI18n } from '@/features/i18n/useI18n'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import ContentPanel from '@/shared/components/ContentPanel.vue'
+import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const { canUpdate, canDelete } = useMenuAuth()
+const { tCode } = useI18n()
 const roles = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -59,28 +64,29 @@ onMounted(loadRoles)
 </script>
 
 <template>
-  <el-card>
-    <template #header>
-      <div class="header">
-        <span>Role 관리</span>
-        <el-button v-if="canUpdate" type="primary" @click="openCreate">Role 생성</el-button>
-      </div>
+  <PageLayout title="Role 관리" subtitle="시스템 Role 조회·생성·삭제" :count="roles.length">
+    <template #actions>
+      <el-button v-if="canUpdate" type="primary" @click="openCreate">Role 생성</el-button>
     </template>
 
-    <el-table v-loading="loading" :data="roles" style="width: 100%">
-      <el-table-column prop="code" label="코드" width="160" />
-      <el-table-column prop="name" label="이름" />
-      <el-table-column prop="description" label="설명" />
-      <el-table-column v-if="canDelete" label="관리" width="120">
-        <template #default="{ row }">
-          <el-button type="danger" link @click="handleDelete(row)">
-            삭제
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <ContentPanel title="Role 목록" :loading="loading" :show-header="false">
+      <div class="table-scroll">
+        <el-table :data="roles" stripe border style="width: 100%">
+          <el-table-column prop="code" :label="tCode('table', 'code')" width="160" />
+          <el-table-column prop="name" :label="tCode('table', 'name')" />
+          <el-table-column prop="description" :label="tCode('table', 'description')" />
+          <el-table-column v-if="canDelete" :label="tCode('table', 'manage')" width="120">
+            <template #default="{ row }">
+              <el-button type="danger" link @click="handleDelete(row)">
+                삭제
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </ContentPanel>
 
-    <el-dialog v-model="dialogVisible" title="Role 생성" width="480px">
+    <ResponsiveDialog v-model="dialogVisible" title="Role 생성" :width="480">
       <el-form label-position="top">
         <el-form-item label="코드">
           <el-input v-model="form.code" placeholder="예: OPERATOR" />
@@ -96,14 +102,6 @@ onMounted(loadRoles)
         <el-button @click="dialogVisible = false">취소</el-button>
         <el-button type="primary" @click="handleCreate">저장</el-button>
       </template>
-    </el-dialog>
-  </el-card>
+    </ResponsiveDialog>
+  </PageLayout>
 </template>
-
-<style scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-</style>

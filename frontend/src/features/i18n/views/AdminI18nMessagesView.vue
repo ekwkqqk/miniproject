@@ -2,9 +2,15 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import * as i18nAdminApi from '@/features/i18n/adminApi'
 import { useMenuAuth } from '@/features/menu/useMenuAuth'
+import { useI18n } from '@/features/i18n/useI18n'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import SearchPanel from '@/shared/components/SearchPanel.vue'
+import ContentPanel from '@/shared/components/ContentPanel.vue'
+import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const { canUpdate, canDelete } = useMenuAuth()
+const { tCode } = useI18n()
 const locales = ref([])
 const groups = ref([])
 const messages = ref([])
@@ -130,6 +136,10 @@ function textSummary(row) {
     .join(' / ')
 }
 
+function handleReset() {
+  filterGroup.value = ''
+}
+
 watch(filterGroup, loadMessages)
 
 onMounted(async () => {
@@ -139,41 +149,44 @@ onMounted(async () => {
 </script>
 
 <template>
-  <el-card>
-    <template #header>
-      <div class="header">
-        <span>메시지 관리</span>
-        <div class="actions">
-          <el-select v-model="filterGroup" clearable placeholder="그룹 필터" style="width: 160px">
-            <el-option v-for="g in groups" :key="g.code" :label="`${g.name} (${g.code})`" :value="g.code" />
-          </el-select>
-          <el-button v-if="canUpdate" type="primary" @click="openCreate">메시지 등록</el-button>
-        </div>
-      </div>
+  <PageLayout title="메시지 관리" subtitle="다국어 메시지 코드·번역 관리" :count="messages.length">
+    <template #actions>
+      <el-button v-if="canUpdate" type="primary" @click="openCreate">메시지 등록</el-button>
     </template>
 
-    <p class="hint">
-      파라미터는 <code>{name}</code> 또는 <code>{0}</code>, <code>{1}</code> 형식으로 작성합니다.
-    </p>
+    <SearchPanel title="검색 조건" @search="loadMessages" @reset="handleReset">
+      <el-form-item label="그룹" class="filter-item">
+        <el-select v-model="filterGroup" clearable placeholder="전체 그룹" style="width: 100%">
+          <el-option v-for="g in groups" :key="g.code" :label="`${g.name} (${g.code})`" :value="g.code" />
+        </el-select>
+      </el-form-item>
+    </SearchPanel>
 
-    <el-table v-loading="loading" :data="messages" style="width: 100%">
-      <el-table-column prop="groupCode" label="그룹" width="120" />
-      <el-table-column prop="code" label="코드" width="160" />
-      <el-table-column prop="description" label="설명" width="160" />
-      <el-table-column label="번역" min-width="280">
-        <template #default="{ row }">
-          <span class="summary">{{ textSummary(row) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column v-if="canUpdate || canDelete" label="관리" width="160">
-        <template #default="{ row }">
-          <el-button v-if="canUpdate" type="primary" link @click="openEdit(row)">수정</el-button>
-          <el-button v-if="canDelete" type="danger" link @click="handleDelete(row)">삭제</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <ContentPanel title="메시지 목록" :loading="loading">
+      <p class="hint">
+        파라미터는 <code>{name}</code> 또는 <code>{0}</code>, <code>{1}</code> 형식으로 작성합니다.
+      </p>
+      <div class="table-scroll">
+        <el-table :data="messages" stripe border style="width: 100%">
+          <el-table-column prop="groupCode" :label="tCode('table', 'group')" width="120" />
+          <el-table-column prop="code" :label="tCode('table', 'code')" width="160" />
+          <el-table-column prop="description" :label="tCode('table', 'description')" width="160" />
+          <el-table-column :label="tCode('table', 'translation')" min-width="280">
+            <template #default="{ row }">
+              <span class="summary">{{ textSummary(row) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column v-if="canUpdate || canDelete" :label="tCode('table', 'manage')" width="160">
+            <template #default="{ row }">
+              <el-button v-if="canUpdate" type="primary" link @click="openEdit(row)">수정</el-button>
+              <el-button v-if="canDelete" type="danger" link @click="handleDelete(row)">삭제</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </ContentPanel>
 
-    <el-dialog v-model="dialogVisible" :title="editingId ? '메시지 수정' : '메시지 등록'" width="640px">
+    <ResponsiveDialog v-model="dialogVisible" :title="editingId ? '메시지 수정' : '메시지 등록'" :width="640">
       <el-form label-position="top">
         <el-form-item label="그룹">
           <el-select v-model="form.groupCode" :disabled="!!editingId" style="width: 100%">
@@ -187,8 +200,12 @@ onMounted(async () => {
           <el-input v-model="form.description" />
         </el-form-item>
         <el-form-item v-for="locale in locales" :key="locale.code" :label="`${locale.name} (${locale.code})`">
-          <el-input v-model="form.texts[locale.code]" type="textarea" :rows="2"
-                    placeholder="예: 안녕하세요, {name}님!" />
+          <el-input
+            v-model="form.texts[locale.code]"
+            type="textarea"
+            :rows="2"
+            placeholder="예: 안녕하세요, {name}님!"
+          />
         </el-form-item>
         <el-divider>미리보기</el-divider>
         <el-form-item label="미리보기 로케일">
@@ -205,27 +222,17 @@ onMounted(async () => {
         <el-button @click="dialogVisible = false">취소</el-button>
         <el-button type="primary" @click="handleSave">저장</el-button>
       </template>
-    </el-dialog>
-  </el-card>
+    </ResponsiveDialog>
+  </PageLayout>
 </template>
 
 <style scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-.actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
 .hint {
   margin: 0 0 12px;
   color: #666;
   font-size: 13px;
 }
+
 .summary {
   font-size: 12px;
   color: #555;

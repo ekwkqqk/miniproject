@@ -3,12 +3,14 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/store'
 import { useSettingsStore } from '@/features/settings/store'
+import { useI18n } from '@/features/i18n/useI18n'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
+const { tCode } = useI18n()
 const loading = ref(false)
 
 const expired = computed(() => route.query.reason === 'expired')
@@ -98,7 +100,7 @@ async function handleSubmit() {
 <template>
   <div class="auth-page">
     <el-card class="auth-card">
-      <h2>비밀번호 변경</h2>
+      <h2>{{ tCode('common', 'changePassword') }}</h2>
       <el-alert
         v-if="expired"
         type="warning"
@@ -144,7 +146,7 @@ async function handleSubmit() {
           />
         </el-form-item>
         <el-button type="primary" native-type="submit" :loading="loading" style="width: 100%">
-          비밀번호 변경
+          {{ tCode('common', 'changePassword') }}
         </el-button>
       </el-form>
       <p class="link">

@@ -42,7 +42,9 @@ public class MenuAccessLogDataInitializer {
         if (systemAdmin == null) {
             return;
         }
-        Menu menu = menuRepository.save(new Menu("메뉴 접근 이력", "/admin/menu-access-logs", 110, null));
+        Menu menu = new Menu("메뉴 접근 이력", "/admin/menu-access-logs", 110, null);
+        menu.changeNameI18nKey("menu.menuAccessLogs");
+        menu = menuRepository.save(menu);
         menuRoleRepository.save(new MenuRole(menu, systemAdmin));
         menuRoleButtonRepository.save(new MenuRoleButton(
                 menu, systemAdmin, true, false, false, false, false, false

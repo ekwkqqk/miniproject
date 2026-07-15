@@ -89,19 +89,30 @@ public class RbacDataInitializer {
             return;
         }
 
-        createMenu("대시보드", "/", 1, null, List.of(systemAdmin, specialUser, userRole), true, false, false, false, false, false);
-        createMenu("특별 사용자", "/special", 2, null, List.of(systemAdmin, specialUser), true, true, false, false, false, false);
+        createMenu("대시보드", "/", 1, null, "menu.dashboard",
+                List.of(systemAdmin, specialUser, userRole), true, false, false, false, false, false);
+        createMenu("특별 사용자", "/special", 2, null, "menu.special",
+                List.of(systemAdmin, specialUser), true, true, false, false, false, false);
 
-        Menu adminFolder = createMenu("시스템 관리", null, 3, null, List.of(), false, false, false, false, false, false);
-        createMenu("사용자 Role 관리", "/admin/users", 1, adminFolder, List.of(systemAdmin), true, true, false, false, false, false);
-        createMenu("Role 관리", "/admin/roles", 2, adminFolder, List.of(systemAdmin), true, true, true, false, false, false);
-        createMenu("메뉴 관리", "/admin/menus", 3, adminFolder, List.of(systemAdmin), true, true, true, false, false, false);
+        Menu adminFolder = createMenu("시스템 관리", null, 3, null, "menu.system",
+                List.of(), false, false, false, false, false, false);
+        createMenu("사용자 Role 관리", "/admin/users", 1, adminFolder, "menu.users",
+                List.of(systemAdmin), true, true, false, false, false, false);
+        createMenu("Role 관리", "/admin/roles", 2, adminFolder, "menu.roles",
+                List.of(systemAdmin), true, true, true, false, false, false);
+        createMenu("메뉴 관리", "/admin/menus", 3, adminFolder, "menu.menus",
+                List.of(systemAdmin), true, true, true, false, false, false);
     }
 
-    private Menu createMenu(String name, String url, int sortOrder, Menu parent, List<Role> roles,
+    private Menu createMenu(String name, String url, int sortOrder, Menu parent, String nameI18nKey,
+                            List<Role> roles,
                             boolean canRead, boolean canUpdate, boolean canDelete,
                             boolean canUpload, boolean canDownload, boolean canOther) {
-        Menu menu = menuRepository.save(new Menu(name, url, sortOrder, parent));
+        Menu menu = new Menu(name, url, sortOrder, parent);
+        if (nameI18nKey != null) {
+            menu.changeNameI18nKey(nameI18nKey);
+        }
+        menu = menuRepository.save(menu);
         for (Role role : roles) {
             menuRoleRepository.save(new MenuRole(menu, role));
             menuRoleButtonRepository.save(new MenuRoleButton(

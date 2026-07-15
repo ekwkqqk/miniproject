@@ -2,9 +2,14 @@
 import { onMounted, ref } from 'vue'
 import * as i18nAdminApi from '@/features/i18n/adminApi'
 import { useMenuAuth } from '@/features/menu/useMenuAuth'
+import { useI18n } from '@/features/i18n/useI18n'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import ContentPanel from '@/shared/components/ContentPanel.vue'
+import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const { canUpdate, canDelete } = useMenuAuth()
+const { tCode } = useI18n()
 const locales = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -77,32 +82,33 @@ onMounted(load)
 </script>
 
 <template>
-  <el-card>
-    <template #header>
-      <div class="header">
-        <span>로케일 관리</span>
-        <el-button v-if="canUpdate" type="primary" @click="openCreate">로케일 등록</el-button>
-      </div>
+  <PageLayout title="로케일 관리" subtitle="다국어 로케일 등록·수정" :count="locales.length">
+    <template #actions>
+      <el-button v-if="canUpdate" type="primary" @click="openCreate">로케일 등록</el-button>
     </template>
 
-    <el-table v-loading="loading" :data="locales" style="width: 100%">
-      <el-table-column prop="code" label="코드" width="120" />
-      <el-table-column prop="name" label="이름" />
-      <el-table-column label="사용" width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? 'Y' : 'N' }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="sortOrder" label="정렬" width="80" />
-      <el-table-column v-if="canUpdate || canDelete" label="관리" width="160">
-        <template #default="{ row }">
-          <el-button v-if="canUpdate" type="primary" link @click="openEdit(row)">수정</el-button>
-          <el-button v-if="canDelete" type="danger" link @click="handleDelete(row)">삭제</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <ContentPanel :loading="loading" :show-header="false">
+      <div class="table-scroll">
+        <el-table :data="locales" stripe border style="width: 100%">
+          <el-table-column prop="code" :label="tCode('table', 'code')" width="120" />
+          <el-table-column prop="name" :label="tCode('table', 'name')" />
+          <el-table-column :label="tCode('table', 'enabled')" width="100">
+            <template #default="{ row }">
+              <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? 'Y' : 'N' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="sortOrder" :label="tCode('table', 'sortOrder')" width="80" />
+          <el-table-column v-if="canUpdate || canDelete" :label="tCode('table', 'manage')" width="160">
+            <template #default="{ row }">
+              <el-button v-if="canUpdate" type="primary" link @click="openEdit(row)">수정</el-button>
+              <el-button v-if="canDelete" type="danger" link @click="handleDelete(row)">삭제</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </ContentPanel>
 
-    <el-dialog v-model="dialogVisible" :title="editingId ? '로케일 수정' : '로케일 등록'" width="480px">
+    <ResponsiveDialog v-model="dialogVisible" :title="editingId ? '로케일 수정' : '로케일 등록'" :width="480">
       <el-form label-position="top">
         <el-form-item label="코드">
           <el-input v-model="form.code" :disabled="!!editingId" placeholder="예: ko, en, ja" />
@@ -121,14 +127,6 @@ onMounted(load)
         <el-button @click="dialogVisible = false">취소</el-button>
         <el-button type="primary" @click="handleSave">저장</el-button>
       </template>
-    </el-dialog>
-  </el-card>
+    </ResponsiveDialog>
+  </PageLayout>
 </template>
-
-<style scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-</style>

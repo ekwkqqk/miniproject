@@ -3,13 +3,14 @@ import { useI18nStore } from '@/features/i18n/store'
 
 export function useI18n() {
   const store = useI18nStore()
-  const { locale, locales, messages, loaded } = storeToRefs(store)
+  const { locale, locales, messages, loaded, switching } = storeToRefs(store)
 
   return {
     locale,
     locales,
     messages,
     loaded,
+    switching,
     t: store.t,
     tCode: store.tCode,
     setLocale: store.setLocale,

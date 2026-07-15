@@ -7,19 +7,41 @@ import { useBreakpoint } from '@/shared/composables/useBreakpoint'
 import AppSidebarNav from '@/shared/components/AppSidebarNav.vue'
 import { Expand, Fold, User } from '@element-plus/icons-vue'
 
+const SIDEBAR_STORAGE_KEY = 'app.sidebarVisible'
+
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const { locale, locales, setLocale } = useI18n()
+const { locale, locales, setLocale, tCode, switching } = useI18n()
 const { isCompact, isMobile, device } = useBreakpoint()
 
 const drawerOpen = ref(false)
+const sidebarVisible = ref(readSidebarVisible())
 const activeMenu = computed(() => route.path)
 const deviceLabel = computed(() => {
   if (device.value === 'mobile') return 'Mobile'
   if (device.value === 'tablet') return 'Tablet'
   return 'Desktop'
 })
+const menuOpen = computed(() => (isCompact.value ? drawerOpen.value : sidebarVisible.value))
+
+function readSidebarVisible() {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_STORAGE_KEY)
+    if (raw === null) return true
+    return raw !== 'false'
+  } catch {
+    return true
+  }
+}
+
+function persistSidebarVisible(value) {
+  try {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(value))
+  } catch {
+    // ignore
+  }
+}
 
 watch(
   () => route.fullPath,
@@ -32,6 +54,10 @@ watch(isCompact, (compact) => {
   if (!compact) drawerOpen.value = false
 })
 
+watch(sidebarVisible, (value) => {
+  persistSidebarVisible(value)
+})
+
 async function handleLogout() {
   await authStore.logout()
   router.push({ name: 'login' })
@@ -42,14 +68,23 @@ async function onLocaleChange(code) {
 }
 
 function toggleNav() {
-  drawerOpen.value = !drawerOpen.value
+  if (isCompact.value) {
+    drawerOpen.value = !drawerOpen.value
+    return
+  }
+  sidebarVisible.value = !sidebarVisible.value
 }
 </script>
 
 <template>
   <el-container class="layout">
-    <el-aside v-if="!isCompact" :width="'var(--app-sidebar-width)'" class="sidebar desktop-sidebar">
-      <AppSidebarNav :active-menu="activeMenu" />
+    <el-aside
+      v-if="!isCompact"
+      class="sidebar desktop-sidebar"
+      :class="{ 'desktop-sidebar--hidden': !sidebarVisible }"
+      :width="sidebarVisible ? 'var(--app-sidebar-width)' : '0'"
+    >
+      <AppSidebarNav v-show="sidebarVisible" :active-menu="activeMenu" />
     </el-aside>
 
     <el-drawer
@@ -67,26 +102,28 @@ function toggleNav() {
       <el-header class="header" height="var(--app-header-height)">
         <div class="header-left">
           <el-button
-            v-if="isCompact"
             class="nav-toggle"
             text
-            :aria-label="drawerOpen ? '메뉴 닫기' : '메뉴 열기'"
+            :aria-label="menuOpen ? tCode('common', 'hideMenu') : tCode('common', 'showMenu')"
+            :title="menuOpen ? tCode('common', 'hideMenu') : tCode('common', 'showMenu')"
             @click="toggleNav"
           >
             <el-icon :size="22">
-              <Fold v-if="drawerOpen" />
+              <Fold v-if="menuOpen" />
               <Expand v-else />
             </el-icon>
           </el-button>
-          <span v-if="isCompact" class="brand-inline">miniproject</span>
+          <span v-if="isCompact || !sidebarVisible" class="brand-inline">miniproject</span>
           <el-tag size="small" type="info" effect="plain" class="device-badge">{{ deviceLabel }}</el-tag>
         </div>
 
         <div class="header-right">
           <el-select
-            v-model="locale"
+            :model-value="locale"
             size="small"
             class="locale-select"
+            :loading="switching"
+            :disabled="switching"
             @change="onLocaleChange"
           >
             <el-option
@@ -97,9 +134,13 @@ function toggleNav() {
             />
           </el-select>
           <el-icon class="user-icon"><User /></el-icon>
-          <span v-if="!isMobile" class="user-name">{{ authStore.user?.name || '사용자' }}</span>
-          <el-button link @click="router.push({ name: 'change-password' })">비밀번호 변경</el-button>
-          <el-button type="danger" link @click="handleLogout">로그아웃</el-button>
+          <span v-if="!isMobile" class="user-name">{{ authStore.user?.name || tCode('common', 'user') }}</span>
+          <el-button link @click="router.push({ name: 'change-password' })">
+            {{ tCode('common', 'changePassword') }}
+          </el-button>
+          <el-button type="danger" link @click="handleLogout">
+            {{ tCode('common', 'logout') }}
+          </el-button>
         </div>
       </el-header>
 
@@ -124,6 +165,14 @@ function toggleNav() {
   position: sticky;
   top: 0;
   overflow: hidden;
+  transition: width 0.2s ease;
+  flex-shrink: 0;
+}
+
+.desktop-sidebar--hidden {
+  border: none;
+  min-width: 0;
+  padding: 0;
 }
 
 .content-shell {

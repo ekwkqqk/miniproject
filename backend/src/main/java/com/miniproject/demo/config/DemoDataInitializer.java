@@ -45,15 +45,19 @@ public class DemoDataInitializer {
             return;
         }
 
-        Menu folder = menuRepository.save(new Menu("반응형 테스트", null, 90, null));
-        createLeaf("검색 화면", "/demo/search", 1, folder, roles);
-        createLeaf("조회 화면", "/demo/view", 2, folder, roles);
-        createLeaf("수정 화면", "/demo/edit", 3, folder, roles);
-        createLeaf("팝업 테스트", "/demo/popup", 4, folder, roles);
+        Menu folder = new Menu("반응형 테스트", null, 90, null);
+        folder.changeNameI18nKey("menu.demo");
+        folder = menuRepository.save(folder);
+        createLeaf("검색 화면", "/demo/search", 1, folder, "menu.demoSearch", roles);
+        createLeaf("조회 화면", "/demo/view", 2, folder, "menu.demoView", roles);
+        createLeaf("수정 화면", "/demo/edit", 3, folder, "menu.demoEdit", roles);
+        createLeaf("팝업 테스트", "/demo/popup", 4, folder, "menu.demoPopup", roles);
     }
 
-    private void createLeaf(String name, String url, int sortOrder, Menu parent, List<Role> roles) {
-        Menu menu = menuRepository.save(new Menu(name, url, sortOrder, parent));
+    private void createLeaf(String name, String url, int sortOrder, Menu parent, String nameI18nKey, List<Role> roles) {
+        Menu menu = new Menu(name, url, sortOrder, parent);
+        menu.changeNameI18nKey(nameI18nKey);
+        menu = menuRepository.save(menu);
         for (Role role : roles) {
             menuRoleRepository.save(new MenuRole(menu, role));
             menuRoleButtonRepository.save(new MenuRoleButton(

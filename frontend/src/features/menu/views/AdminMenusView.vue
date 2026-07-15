@@ -4,10 +4,14 @@ import * as adminApi from '@/features/admin/api'
 import * as i18nAdminApi from '@/features/i18n/adminApi'
 import { useMenuAuth } from '@/features/menu/useMenuAuth'
 import { useMenuStore } from '@/features/menu/store'
+import { useI18n } from '@/features/i18n/useI18n'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const { canUpdate, canDelete } = useMenuAuth()
 const menuStore = useMenuStore()
+const { tCode } = useI18n()
 const menus = ref([])
 const roles = ref([])
 const i18nMessages = ref([])
@@ -409,267 +413,267 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-loading="loading" class="menu-admin">
-    <aside class="tree-panel">
-      <div class="tree-toolbar">
-        <span class="panel-title">메뉴 트리</span>
-        <div class="tree-actions">
-          <el-button v-if="canUpdate" size="small" @click="startCreateRoot">최상위 추가</el-button>
-          <el-button
-            v-if="canUpdate"
-            size="small"
-            :disabled="mode !== 'edit'"
-            @click="startCreateChild"
-          >
-            하위 추가
-          </el-button>
-        </div>
-      </div>
-      <p v-if="canUpdate" class="tree-hint">드래그 앤 드롭으로 순서·상위 메뉴를 변경할 수 있습니다.</p>
-
-      <el-tree
-        ref="treeRef"
-        :data="menus"
-        :props="treeProps"
-        node-key="id"
-        highlight-current
-        default-expand-all
-        :expand-on-click-node="false"
-        :draggable="canUpdate"
-        :allow-drag="allowDrag"
-        :allow-drop="allowDrop"
-        class="menu-tree"
-        @node-click="onTreeNodeClick"
-        @node-drop="onNodeDrop"
-      >
-        <template #default="{ data }">
-          <span class="tree-node">
-            <el-tag :type="data.folder ? 'info' : 'success'" size="small" effect="plain">
-              {{ data.folder ? '폴더' : '화면' }}
-            </el-tag>
-            <span class="tree-node-name">{{ data.name }}</span>
-          </span>
-        </template>
-      </el-tree>
-
-      <p v-if="!menus.length && !loading" class="empty-tree">등록된 메뉴가 없습니다.</p>
-    </aside>
-
-    <section class="detail-panel">
-      <div class="detail-toolbar">
-        <span class="panel-title">{{ detailTitle }}</span>
-        <div v-if="showDetail" class="detail-actions">
-          <el-button v-if="mode === 'create'" @click="cancelCreate">취소</el-button>
-          <el-button
-            v-if="mode === 'edit' && canDelete"
-            type="danger"
-            plain
-            @click="handleDelete"
-          >
-            삭제
-          </el-button>
-          <el-button
-            v-if="canUpdate"
-            type="primary"
-            :loading="saving"
-            @click="handleSave"
-          >
-            저장
-          </el-button>
-        </div>
-      </div>
-
-      <div v-if="!showDetail" class="detail-empty">
-        <p>왼쪽 트리에서 메뉴를 선택하거나, 새 메뉴를 추가하세요.</p>
-      </div>
-
-      <el-form v-else label-position="top" class="detail-form">
-        <el-form-item label="상위 메뉴">
-          <el-select v-model="form.parentId" clearable placeholder="최상위" style="width: 100%" :disabled="!canUpdate">
-            <el-option
-              v-for="menu in parentOptions"
-              :key="menu.id"
-              :label="indentLabel(menu)"
-              :value="menu.id"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="다국어 메뉴명">
-          <div class="picker-field">
-            <el-input
-              :model-value="selectedI18nLabel"
-              readonly
-              placeholder="다국어 메시지를 검색해 선택하세요"
-            />
-            <el-button :disabled="!canUpdate" @click="openI18nPicker">찾기</el-button>
-            <el-button :disabled="!canUpdate || !form.nameI18nKey" @click="clearI18nKey">지우기</el-button>
+  <PageLayout title="메뉴 관리" subtitle="메뉴 트리 구성 및 Role·버튼 권한">
+    <div v-loading="loading" class="menu-admin">
+      <aside class="tree-panel">
+        <div class="tree-toolbar">
+          <span class="panel-title">메뉴 트리</span>
+          <div class="tree-actions">
+            <el-button v-if="canUpdate" size="small" @click="startCreateRoot">최상위 추가</el-button>
+            <el-button
+              v-if="canUpdate"
+              size="small"
+              :disabled="mode !== 'edit'"
+              @click="startCreateChild"
+            >
+              하위 추가
+            </el-button>
           </div>
-        </el-form-item>
+        </div>
+        <p v-if="canUpdate" class="tree-hint">드래그 앤 드롭으로 순서·상위 메뉴를 변경할 수 있습니다.</p>
 
-        <el-form-item label="기본 메뉴명 (fallback)">
-          <el-input
-            v-model="form.name"
-            :disabled="!canUpdate"
-            placeholder="다국어가 없을 때 표시할 이름"
-          />
-        </el-form-item>
+        <el-tree
+          ref="treeRef"
+          :data="menus"
+          :props="treeProps"
+          node-key="id"
+          highlight-current
+          default-expand-all
+          :expand-on-click-node="false"
+          :draggable="canUpdate"
+          :allow-drag="allowDrag"
+          :allow-drop="allowDrop"
+          class="menu-tree"
+          @node-click="onTreeNodeClick"
+          @node-drop="onNodeDrop"
+        >
+          <template #default="{ data }">
+            <span class="tree-node">
+              <el-tag :type="data.folder ? 'info' : 'success'" size="small" effect="plain">
+                {{ data.folder ? '폴더' : '화면' }}
+              </el-tag>
+              <span class="tree-node-name">{{ data.name }}</span>
+            </span>
+          </template>
+        </el-tree>
 
-        <el-form-item label="URL (폴더는 비워두세요)">
-          <el-input
-            v-model="form.url"
-            :disabled="!canUpdate"
-            placeholder="/example 또는 비움(폴더)"
-          />
-        </el-form-item>
+        <p v-if="!menus.length && !loading" class="empty-tree">등록된 메뉴가 없습니다.</p>
+      </aside>
 
-        <template v-if="!isFolder">
-          <el-form-item label="접근 Role">
+      <section class="detail-panel">
+        <div class="detail-toolbar">
+          <span class="panel-title">{{ detailTitle }}</span>
+          <div v-if="showDetail" class="detail-actions">
+            <el-button v-if="mode === 'create'" @click="cancelCreate">취소</el-button>
+            <el-button
+              v-if="mode === 'edit' && canDelete"
+              type="danger"
+              plain
+              @click="handleDelete"
+            >
+              삭제
+            </el-button>
+            <el-button
+              v-if="canUpdate"
+              type="primary"
+              :loading="saving"
+              @click="handleSave"
+            >
+              저장
+            </el-button>
+          </div>
+        </div>
+
+        <div v-if="!showDetail" class="detail-empty">
+          <p>왼쪽 트리에서 메뉴를 선택하거나, 새 메뉴를 추가하세요.</p>
+        </div>
+
+        <el-form v-else label-position="top" class="detail-form">
+          <el-form-item label="상위 메뉴">
+            <el-select v-model="form.parentId" clearable placeholder="최상위" style="width: 100%" :disabled="!canUpdate">
+              <el-option
+                v-for="menu in parentOptions"
+                :key="menu.id"
+                :label="indentLabel(menu)"
+                :value="menu.id"
+              />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="다국어 메뉴명">
             <div class="picker-field">
               <el-input
-                :model-value="selectedRolesLabel"
+                :model-value="selectedI18nLabel"
                 readonly
-                placeholder="Role을 검색해 선택하세요"
+                placeholder="다국어 메시지를 검색해 선택하세요"
               />
-              <el-button :disabled="!canUpdate" @click="openRolePicker">찾기</el-button>
-              <el-button :disabled="!canUpdate || !form.roleIds.length" @click="clearRoles">지우기</el-button>
+              <el-button :disabled="!canUpdate" @click="openI18nPicker">찾기</el-button>
+              <el-button :disabled="!canUpdate || !form.nameI18nKey" @click="clearI18nKey">지우기</el-button>
             </div>
           </el-form-item>
 
-          <el-form-item v-if="rolePermissionRows.length" label="버튼 권한">
-            <el-table :data="rolePermissionRows" border size="small" style="width: 100%">
-              <el-table-column prop="roleName" label="Role" min-width="140" />
-              <el-table-column label="조회" width="72" align="center">
-                <template #default="{ row }">
-                  <el-checkbox
-                    v-if="form.roleButtons[row.roleId]"
-                    v-model="form.roleButtons[row.roleId].canRead"
-                    :disabled="!canUpdate"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="수정" width="72" align="center">
-                <template #default="{ row }">
-                  <el-checkbox
-                    v-if="form.roleButtons[row.roleId]"
-                    v-model="form.roleButtons[row.roleId].canUpdate"
-                    :disabled="!canUpdate"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="삭제" width="72" align="center">
-                <template #default="{ row }">
-                  <el-checkbox
-                    v-if="form.roleButtons[row.roleId]"
-                    v-model="form.roleButtons[row.roleId].canDelete"
-                    :disabled="!canUpdate"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="업로드" width="80" align="center">
-                <template #default="{ row }">
-                  <el-checkbox
-                    v-if="form.roleButtons[row.roleId]"
-                    v-model="form.roleButtons[row.roleId].canUpload"
-                    :disabled="!canUpdate"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="다운로드" width="88" align="center">
-                <template #default="{ row }">
-                  <el-checkbox
-                    v-if="form.roleButtons[row.roleId]"
-                    v-model="form.roleButtons[row.roleId].canDownload"
-                    :disabled="!canUpdate"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="기타" width="72" align="center">
-                <template #default="{ row }">
-                  <el-checkbox
-                    v-if="form.roleButtons[row.roleId]"
-                    v-model="form.roleButtons[row.roleId].canOther"
-                    :disabled="!canUpdate"
-                  />
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-form-item>
-        </template>
-        <el-alert
-          v-else
-          type="info"
-          :closable="false"
-          title="폴더 메뉴는 URL·Role·버튼 권한이 없습니다. 하위 화면 메뉴에만 권한을 지정합니다."
-        />
-      </el-form>
-    </section>
-
-    <el-dialog
-      v-model="i18nPickerVisible"
-      title="다국어 메시지 찾기"
-      width="720px"
-      append-to-body
-    >
-      <el-input
-        v-model="i18nSearch"
-        clearable
-        placeholder="키, 그룹, 코드, 번역 내용으로 검색"
-        style="margin-bottom: 12px"
-      />
-      <el-table
-        :data="filteredI18nOptions"
-        height="360"
-        highlight-current-row
-        style="width: 100%"
-        @row-click="selectI18nKey"
-      >
-        <el-table-column prop="groupCode" label="그룹" width="120" />
-        <el-table-column prop="code" label="코드" width="140" />
-        <el-table-column prop="key" label="키" width="180" />
-        <el-table-column prop="preview" label="미리보기(ko)" min-width="180" show-overflow-tooltip />
-        <el-table-column label="" width="80" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link @click.stop="selectI18nKey(row)">선택</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <template #footer>
-        <el-button @click="i18nPickerVisible = false">닫기</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog
-      v-model="rolePickerVisible"
-      title="접근 Role 선택"
-      width="640px"
-      append-to-body
-    >
-      <el-input
-        v-model="roleSearch"
-        clearable
-        placeholder="코드, 이름, 설명으로 검색"
-        style="margin-bottom: 12px"
-      />
-      <el-table :data="filteredRoles" height="360" style="width: 100%">
-        <el-table-column label="" width="56" align="center">
-          <template #default="{ row }">
-            <el-checkbox
-              :model-value="isDraftRoleChecked(row.id)"
-              @change="(checked) => toggleDraftRole(row.id, checked)"
+          <el-form-item label="기본 메뉴명 (fallback)">
+            <el-input
+              v-model="form.name"
+              :disabled="!canUpdate"
+              placeholder="다국어가 없을 때 표시할 이름"
             />
+          </el-form-item>
+
+          <el-form-item label="URL (폴더는 비워두세요)">
+            <el-input
+              v-model="form.url"
+              :disabled="!canUpdate"
+              placeholder="/example 또는 비움(폴더)"
+            />
+          </el-form-item>
+
+          <template v-if="!isFolder">
+            <el-form-item label="접근 Role">
+              <div class="picker-field">
+                <el-input
+                  :model-value="selectedRolesLabel"
+                  readonly
+                  placeholder="Role을 검색해 선택하세요"
+                />
+                <el-button :disabled="!canUpdate" @click="openRolePicker">찾기</el-button>
+                <el-button :disabled="!canUpdate || !form.roleIds.length" @click="clearRoles">지우기</el-button>
+              </div>
+            </el-form-item>
+
+            <el-form-item v-if="rolePermissionRows.length" label="버튼 권한">
+              <el-table :data="rolePermissionRows" border size="small" style="width: 100%">
+                <el-table-column prop="roleName" :label="tCode('table', 'role')" min-width="140" />
+                <el-table-column :label="tCode('table', 'canRead')" width="72" align="center">
+                  <template #default="{ row }">
+                    <el-checkbox
+                      v-if="form.roleButtons[row.roleId]"
+                      v-model="form.roleButtons[row.roleId].canRead"
+                      :disabled="!canUpdate"
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column :label="tCode('table', 'canUpdate')" width="72" align="center">
+                  <template #default="{ row }">
+                    <el-checkbox
+                      v-if="form.roleButtons[row.roleId]"
+                      v-model="form.roleButtons[row.roleId].canUpdate"
+                      :disabled="!canUpdate"
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column :label="tCode('table', 'canDelete')" width="72" align="center">
+                  <template #default="{ row }">
+                    <el-checkbox
+                      v-if="form.roleButtons[row.roleId]"
+                      v-model="form.roleButtons[row.roleId].canDelete"
+                      :disabled="!canUpdate"
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column :label="tCode('table', 'canUpload')" width="80" align="center">
+                  <template #default="{ row }">
+                    <el-checkbox
+                      v-if="form.roleButtons[row.roleId]"
+                      v-model="form.roleButtons[row.roleId].canUpload"
+                      :disabled="!canUpdate"
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column :label="tCode('table', 'canDownload')" width="88" align="center">
+                  <template #default="{ row }">
+                    <el-checkbox
+                      v-if="form.roleButtons[row.roleId]"
+                      v-model="form.roleButtons[row.roleId].canDownload"
+                      :disabled="!canUpdate"
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column :label="tCode('table', 'canOther')" width="72" align="center">
+                  <template #default="{ row }">
+                    <el-checkbox
+                      v-if="form.roleButtons[row.roleId]"
+                      v-model="form.roleButtons[row.roleId].canOther"
+                      :disabled="!canUpdate"
+                    />
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-form-item>
           </template>
-        </el-table-column>
-        <el-table-column prop="code" label="코드" width="140" />
-        <el-table-column prop="name" label="이름" min-width="140" />
-        <el-table-column prop="description" label="설명" min-width="160" show-overflow-tooltip />
-      </el-table>
-      <template #footer>
-        <el-button @click="rolePickerVisible = false">취소</el-button>
-        <el-button type="primary" @click="applyRolePicker">적용</el-button>
-      </template>
-    </el-dialog>
-  </div>
+          <el-alert
+            v-else
+            type="info"
+            :closable="false"
+            title="폴더 메뉴는 URL·Role·버튼 권한이 없습니다. 하위 화면 메뉴에만 권한을 지정합니다."
+          />
+        </el-form>
+      </section>
+
+      <ResponsiveDialog
+        v-model="i18nPickerVisible"
+        title="다국어 메시지 찾기"
+        :width="720"
+      >
+        <el-input
+          v-model="i18nSearch"
+          clearable
+          placeholder="키, 그룹, 코드, 번역 내용으로 검색"
+          style="margin-bottom: 12px"
+        />
+        <el-table
+          :data="filteredI18nOptions"
+          height="360"
+          highlight-current-row
+          style="width: 100%"
+          @row-click="selectI18nKey"
+        >
+          <el-table-column prop="groupCode" :label="tCode('table', 'group')" width="120" />
+          <el-table-column prop="code" :label="tCode('table', 'code')" width="140" />
+          <el-table-column prop="key" :label="tCode('table', 'key')" width="180" />
+          <el-table-column prop="preview" :label="tCode('table', 'preview')" min-width="180" show-overflow-tooltip />
+          <el-table-column :label="tCode('table', 'select')" width="80" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" link @click.stop="selectI18nKey(row)">선택</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <template #footer>
+          <el-button @click="i18nPickerVisible = false">닫기</el-button>
+        </template>
+      </ResponsiveDialog>
+
+      <ResponsiveDialog
+        v-model="rolePickerVisible"
+        title="접근 Role 선택"
+        :width="640"
+      >
+        <el-input
+          v-model="roleSearch"
+          clearable
+          placeholder="코드, 이름, 설명으로 검색"
+          style="margin-bottom: 12px"
+        />
+        <el-table :data="filteredRoles" height="360" style="width: 100%">
+          <el-table-column label="" width="56" align="center">
+            <template #default="{ row }">
+              <el-checkbox
+                :model-value="isDraftRoleChecked(row.id)"
+                @change="(checked) => toggleDraftRole(row.id, checked)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column prop="code" :label="tCode('table', 'code')" width="140" />
+          <el-table-column prop="name" :label="tCode('table', 'name')" min-width="140" />
+          <el-table-column prop="description" :label="tCode('table', 'description')" min-width="160" show-overflow-tooltip />
+        </el-table>
+        <template #footer>
+          <el-button @click="rolePickerVisible = false">취소</el-button>
+          <el-button type="primary" @click="applyRolePicker">적용</el-button>
+        </template>
+      </ResponsiveDialog>
+    </div>
+  </PageLayout>
 </template>
 
 <style scoped>

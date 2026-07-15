@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBreakpoint } from '@/shared/composables/useBreakpoint'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import ContentPanel from '@/shared/components/ContentPanel.vue'
 import { DEMO_ITEMS, findDemoItem, formatPrice, statusMeta } from '@/features/demo/data'
 import { Back, EditPen } from '@element-plus/icons-vue'
 
@@ -25,24 +27,15 @@ function goEdit() {
 </script>
 
 <template>
-  <div class="page-shell">
-    <div class="page-toolbar">
-      <div>
-        <h1 class="page-toolbar__title">조회 화면</h1>
-        <p class="subtitle">상세 정보 읽기 전용 레이아웃 (현재: {{ device }})</p>
-      </div>
-      <div class="page-toolbar__actions">
-        <el-button :icon="Back" @click="goBack">목록</el-button>
-        <el-button type="primary" :icon="EditPen" :disabled="!item" @click="goEdit">수정</el-button>
-      </div>
-    </div>
+  <PageLayout title="조회 화면" :subtitle="`상세 정보 읽기 전용 레이아웃 (현재: ${device})`">
+    <template #actions>
+      <el-button :icon="Back" @click="goBack">목록</el-button>
+      <el-button type="primary" :icon="EditPen" :disabled="!item" @click="goEdit">수정</el-button>
+    </template>
 
-    <el-card v-if="item" shadow="never">
-      <template #header>
-        <div class="page-toolbar">
-          <span>{{ item.name }}</span>
-          <el-tag :type="statusMeta(item.status).type">{{ statusMeta(item.status).label }}</el-tag>
-        </div>
+    <ContentPanel v-if="item" :title="item.name">
+      <template #header-actions>
+        <el-tag :type="statusMeta(item.status).type">{{ statusMeta(item.status).label }}</el-tag>
       </template>
 
       <div class="detail-grid">
@@ -75,21 +68,17 @@ function goEdit() {
           <div class="value desc">{{ item.description }}</div>
         </div>
       </div>
-    </el-card>
+    </ContentPanel>
 
-    <el-empty v-else description="대상을 찾을 수 없습니다.">
-      <el-button type="primary" @click="goBack">검색으로 이동</el-button>
-    </el-empty>
-  </div>
+    <ContentPanel v-else :show-header="false">
+      <el-empty description="대상을 찾을 수 없습니다.">
+        <el-button type="primary" @click="goBack">검색으로 이동</el-button>
+      </el-empty>
+    </ContentPanel>
+  </PageLayout>
 </template>
 
 <style scoped>
-.subtitle {
-  margin: 4px 0 0;
-  color: #909399;
-  font-size: 13px;
-}
-
 .field .label {
   font-size: 12px;
   color: #909399;

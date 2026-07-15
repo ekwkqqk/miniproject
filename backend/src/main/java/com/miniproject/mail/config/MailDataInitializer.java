@@ -72,7 +72,9 @@ public class MailDataInitializer {
         if (systemAdmin == null) {
             return;
         }
-        Menu menu = menuRepository.save(new Menu("메일 템플릿", "/admin/mail/templates", 95, null));
+        Menu menu = new Menu("메일 템플릿", "/admin/mail/templates", 95, null);
+        menu.changeNameI18nKey("menu.mailTemplates");
+        menu = menuRepository.save(menu);
         menuRoleRepository.save(new MenuRole(menu, systemAdmin));
         menuRoleButtonRepository.save(new MenuRoleButton(
                 menu, systemAdmin, true, true, true, false, false, false

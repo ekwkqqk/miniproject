@@ -34,7 +34,25 @@ export async function setupRouterGuards(router) {
         if (!i18nStore.locales.length) {
           await i18nStore.loadLocales()
         }
-        if (!i18nStore.loaded) {
+        // table/menu 키가 없으면 번들 재로딩 (시드 반영 후 구버전 캐시 방지)
+        const msgs = i18nStore.messages || {}
+        if (!i18nStore.loaded || !msgs['table.id'] || !msgs['menu.dashboard'] || !msgs['common.changePassword'] || !msgs['common.refresh']) {
+          await i18nStore.loadMessages()
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // 로그인/비번변경 등 게스트 화면에서도 common 액션 문구 사용
+    if (to.meta.guestOnly || to.name === 'change-password') {
+      const i18nStore = useI18nStore()
+      try {
+        if (!i18nStore.locales.length) {
+          await i18nStore.loadLocales()
+        }
+        const msgs = i18nStore.messages || {}
+        if (!i18nStore.loaded || !msgs['common.changePassword'] || !msgs['common.logout']) {
           await i18nStore.loadMessages()
         }
       } catch {

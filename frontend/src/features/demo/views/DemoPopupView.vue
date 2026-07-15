@@ -2,10 +2,14 @@
 import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useBreakpoint } from '@/shared/composables/useBreakpoint'
+import { useI18n } from '@/features/i18n/useI18n'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import ContentPanel from '@/shared/components/ContentPanel.vue'
 import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
 import { DEMO_ITEMS, formatPrice, statusMeta } from '@/features/demo/data'
 
 const { device, isMobile } = useBreakpoint()
+const { tCode } = useI18n()
 
 const basicOpen = ref(false)
 const formOpen = ref(false)
@@ -62,18 +66,11 @@ function submitForm() {
 </script>
 
 <template>
-  <div class="page-shell">
-    <div class="page-toolbar">
-      <div>
-        <h1 class="page-toolbar__title">팝업 테스트</h1>
-        <p class="subtitle">
-          Dialog / MessageBox 반응형 동작 확인 (현재: {{ device }}
-          <template v-if="isMobile"> · 모바일은 하단 시트</template>)
-        </p>
-      </div>
-    </div>
-
-    <el-card shadow="never">
+  <PageLayout
+    title="팝업 테스트"
+    :subtitle="`Dialog / MessageBox 반응형 동작 확인 (현재: ${device}${isMobile ? ' · 모바일은 하단 시트' : ''})`"
+  >
+    <ContentPanel title="팝업 열기">
       <div class="action-grid">
         <el-button type="primary" @click="openBasic">기본 Dialog</el-button>
         <el-button type="success" @click="openForm">폼 Dialog</el-button>
@@ -83,31 +80,28 @@ function submitForm() {
       <p class="hint">
         창 너비를 줄이거나 개발자 도구 디바이스 모드로 Mobile / Tablet / Desktop을 전환해 보세요.
       </p>
-    </el-card>
+    </ContentPanel>
 
-    <el-card shadow="never">
-      <template #header>
-        <span>목록에서 Dialog 열기</span>
-      </template>
+    <ContentPanel title="목록에서 Dialog 열기">
       <div class="table-scroll">
         <el-table :data="DEMO_ITEMS.slice(0, 4)" stripe border>
-          <el-table-column prop="id" label="ID" width="90" />
-          <el-table-column prop="name" label="상품명" min-width="140" />
-          <el-table-column label="상태" width="100">
+          <el-table-column prop="id" :label="tCode('table', 'id')" width="90" />
+          <el-table-column prop="name" :label="tCode('table', 'productName')" min-width="140" />
+          <el-table-column :label="tCode('table', 'status')" width="100">
             <template #default="{ row }">
               <el-tag size="small" :type="statusMeta(row.status).type">
                 {{ statusMeta(row.status).label }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="작업" width="120" fixed="right">
+          <el-table-column :label="tCode('table', 'actions')" width="120" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary" @click="openDetail(row)">팝업</el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
-    </el-card>
+    </ContentPanel>
 
     <ResponsiveDialog v-model="basicOpen" title="기본 Dialog" :width="480">
       <p>
@@ -164,16 +158,10 @@ function submitForm() {
         <el-button type="primary" @click="detailOpen = false">닫기</el-button>
       </template>
     </ResponsiveDialog>
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>
-.subtitle {
-  margin: 4px 0 0;
-  color: #909399;
-  font-size: 13px;
-}
-
 .action-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

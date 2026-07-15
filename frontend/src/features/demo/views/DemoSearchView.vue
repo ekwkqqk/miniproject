@@ -2,6 +2,10 @@
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBreakpoint } from '@/shared/composables/useBreakpoint'
+import { useI18n } from '@/features/i18n/useI18n'
+import PageLayout from '@/shared/components/PageLayout.vue'
+import SearchPanel from '@/shared/components/SearchPanel.vue'
+import ContentPanel from '@/shared/components/ContentPanel.vue'
 import {
   CATEGORIES,
   DEMO_ITEMS,
@@ -9,10 +13,11 @@ import {
   formatPrice,
   statusMeta,
 } from '@/features/demo/data'
-import { Search, RefreshRight, View, EditPen } from '@element-plus/icons-vue'
+import { View, EditPen } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const { isMobile, device } = useBreakpoint()
+const { tCode } = useI18n()
 
 const filters = reactive({
   keyword: '',
@@ -66,54 +71,37 @@ function goEdit(row) {
 </script>
 
 <template>
-  <div class="page-shell">
-    <div class="page-toolbar">
-      <div>
-        <h1 class="page-toolbar__title">검색 화면</h1>
-        <p class="subtitle">필터 + 결과 테이블 반응형 테스트 (현재: {{ device }})</p>
-      </div>
-    </div>
-
-    <el-card shadow="never">
-      <div class="filter-panel">
-        <el-form-item label="키워드" class="filter-item">
-          <el-input
-            v-model="filters.keyword"
-            clearable
-            placeholder="상품명 / 담당자 / ID"
-            @keyup.enter="handleSearch"
+  <PageLayout
+    title="검색 화면"
+    :subtitle="`필터 + 결과 테이블 반응형 테스트 (현재: ${device})`"
+  >
+    <SearchPanel title="검색 조건" :searching="loading" @search="handleSearch" @reset="handleReset">
+      <el-form-item label="키워드" class="filter-item">
+        <el-input
+          v-model="filters.keyword"
+          clearable
+          placeholder="상품명 / 담당자 / ID"
+          @keyup.enter="handleSearch"
+        />
+      </el-form-item>
+      <el-form-item label="카테고리" class="filter-item">
+        <el-select v-model="filters.category" clearable placeholder="전체" style="width: 100%">
+          <el-option v-for="c in CATEGORIES" :key="c" :label="c" :value="c" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="상태" class="filter-item">
+        <el-select v-model="filters.status" clearable placeholder="전체" style="width: 100%">
+          <el-option
+            v-for="s in STATUSES"
+            :key="s.value"
+            :label="s.label"
+            :value="s.value"
           />
-        </el-form-item>
-        <el-form-item label="카테고리" class="filter-item">
-          <el-select v-model="filters.category" clearable placeholder="전체" style="width: 100%">
-            <el-option v-for="c in CATEGORIES" :key="c" :label="c" :value="c" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="상태" class="filter-item">
-          <el-select v-model="filters.status" clearable placeholder="전체" style="width: 100%">
-            <el-option
-              v-for="s in STATUSES"
-              :key="s.value"
-              :label="s.label"
-              :value="s.value"
-            />
-          </el-select>
-        </el-form-item>
-        <div class="filter-panel__actions">
-          <el-button type="primary" :icon="Search" @click="handleSearch">검색</el-button>
-          <el-button :icon="RefreshRight" @click="handleReset">초기화</el-button>
-        </div>
-      </div>
-    </el-card>
+        </el-select>
+      </el-form-item>
+    </SearchPanel>
 
-    <el-card shadow="never" v-loading="loading">
-      <template #header>
-        <div class="page-toolbar">
-          <span>검색 결과 {{ rows.length }}건</span>
-        </div>
-      </template>
-
-      <!-- Mobile: card list -->
+    <ContentPanel title="검색 결과" :count="rows.length" :loading="loading">
       <div v-if="isMobile" class="mobile-list">
         <article v-for="row in rows" :key="row.id" class="mobile-card">
           <div class="mobile-card__head">
@@ -137,26 +125,25 @@ function goEdit(row) {
         <el-empty v-if="!rows.length" description="검색 결과가 없습니다." />
       </div>
 
-      <!-- Tablet / Desktop: table -->
       <div v-else class="table-scroll">
         <el-table :data="rows" stripe border style="width: 100%">
-          <el-table-column prop="id" label="ID" width="90" />
-          <el-table-column prop="name" label="상품명" min-width="160" />
-          <el-table-column prop="category" label="카테고리" width="110" />
-          <el-table-column label="상태" width="100">
+          <el-table-column prop="id" :label="tCode('table', 'id')" width="90" />
+          <el-table-column prop="name" :label="tCode('table', 'productName')" min-width="160" />
+          <el-table-column prop="category" :label="tCode('table', 'category')" width="110" />
+          <el-table-column :label="tCode('table', 'status')" width="100">
             <template #default="{ row }">
               <el-tag size="small" :type="statusMeta(row.status).type">
                 {{ statusMeta(row.status).label }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="가격" width="120" align="right">
+          <el-table-column :label="tCode('table', 'price')" width="120" align="right">
             <template #default="{ row }">{{ formatPrice(row.price) }}</template>
           </el-table-column>
-          <el-table-column prop="stock" label="재고" width="80" align="right" />
-          <el-table-column prop="owner" label="담당자" width="100" />
-          <el-table-column prop="updatedAt" label="수정일" width="120" />
-          <el-table-column label="작업" width="160" fixed="right">
+          <el-table-column prop="stock" :label="tCode('table', 'stock')" width="80" align="right" />
+          <el-table-column prop="owner" :label="tCode('table', 'owner')" width="100" />
+          <el-table-column prop="updatedAt" :label="tCode('table', 'updatedAt')" width="120" />
+          <el-table-column :label="tCode('table', 'actions')" width="160" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary" @click="goView(row)">조회</el-button>
               <el-button link type="primary" @click="goEdit(row)">수정</el-button>
@@ -164,70 +151,6 @@ function goEdit(row) {
           </el-table-column>
         </el-table>
       </div>
-    </el-card>
-  </div>
+    </ContentPanel>
+  </PageLayout>
 </template>
-
-<style scoped>
-.subtitle {
-  margin: 4px 0 0;
-  color: #909399;
-  font-size: 13px;
-}
-
-.filter-item {
-  margin-bottom: 0;
-}
-
-.filter-item :deep(.el-form-item__label) {
-  padding-bottom: 4px;
-}
-
-.mobile-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.mobile-card {
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 12px;
-  background: #fff;
-}
-
-.mobile-card__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.mobile-card__meta {
-  margin: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.mobile-card__meta dt {
-  color: #909399;
-  font-size: 11px;
-}
-
-.mobile-card__meta dd {
-  margin: 2px 0 0;
-}
-
-.mobile-card__actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.mobile-card__actions .el-button {
-  flex: 1;
-}
-</style>

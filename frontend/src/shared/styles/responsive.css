@@ -50,6 +50,26 @@
   gap: 8px;
 }
 
+/* Page layout (PageLayout.vue) */
+.page-layout__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-gap);
+  min-width: 0;
+}
+
+.page-layout__subtitle {
+  margin: 4px 0 0;
+  color: #909399;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.page-layout__count {
+  color: #606266;
+  font-size: 13px;
+}
+
 /* Search / filter panels */
 .filter-panel {
   display: grid;
@@ -103,6 +123,58 @@
 
 .table-scroll .el-table {
   min-width: 640px;
+}
+
+/* Mobile result cards */
+.mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-card {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.mobile-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mobile-card__meta,
+.meta-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.mobile-card__meta dt,
+.meta-grid dt {
+  color: #909399;
+  font-size: 11px;
+}
+
+.mobile-card__meta dd,
+.meta-grid dd {
+  margin: 2px 0 0;
+}
+
+.mobile-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mobile-card__actions .el-button {
+  flex: 1;
 }
 
 /* Detail / form layouts */
