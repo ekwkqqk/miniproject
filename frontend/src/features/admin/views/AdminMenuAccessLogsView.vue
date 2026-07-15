@@ -9,7 +9,7 @@ const loading = ref(false)
 const items = ref([])
 const total = ref(0)
 const page = ref(1)
-const size = ref(50)
+const size = ref(10)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 
@@ -95,11 +95,12 @@ onMounted(load)
           v-model:current-page="page"
           :page-size="size"
           :total="total"
-          layout="prev, pager, next"
+          :pager-count="5"
+          layout="total, prev, pager, next"
           background
           @current-change="load"
         />
-        <span class="page-info">{{ page }} / {{ totalPages }}</span>
+        <span class="page-info">{{ page }} / {{ totalPages }} 페이지</span>
       </div>
     </el-card>
   </div>

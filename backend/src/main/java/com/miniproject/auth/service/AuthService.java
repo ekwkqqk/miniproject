@@ -42,6 +42,7 @@ public class AuthService {
     private final RoleService roleService;
     private final SystemSettingsService systemSettingsService;
     private final AuthenticationManager authenticationManager;
+    private final LoginAttemptService loginAttemptService;
 
     public AuthService(UserRepository userRepository,
                        UserRoleRepository userRoleRepository,
@@ -50,7 +51,8 @@ public class AuthService {
                        RefreshTokenService refreshTokenService,
                        RoleService roleService,
                        SystemSettingsService systemSettingsService,
-                       AuthenticationManager authenticationManager) {
+                       AuthenticationManager authenticationManager,
+                       LoginAttemptService loginAttemptService) {
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -59,6 +61,7 @@ public class AuthService {
         this.roleService = roleService;
         this.systemSettingsService = systemSettingsService;
         this.authenticationManager = authenticationManager;
+        this.loginAttemptService = loginAttemptService;
     }
 
     @Transactional
@@ -92,7 +95,7 @@ public class AuthService {
         } catch (DisabledException ex) {
             throw ex;
         } catch (BadCredentialsException | UsernameNotFoundException ex) {
-            if (registerFailedLoginAttempt(request.getEmail())) {
+            if (loginAttemptService.registerFailedLoginAttempt(request.getEmail())) {
                 throw new BusinessException(ErrorCode.ACCOUNT_LOCKED,
                         "로그인 실패 횟수 초과로 계정이 잠겼습니다. 관리자에게 문의하세요.");
             }
@@ -103,38 +106,11 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."));
 
         assertUserEnabled(user);
-        user.resetFailedLoginAttempts();
-        userRepository.save(user);
+        loginAttemptService.resetFailedLoginAttempts(user.getId());
 
         SystemSettings settings = systemSettingsService.getOrCreate();
         assertPasswordNotExpired(user, settings);
         return createAuthTokens(user, settings);
-    }
-
-    /**
-     * @return true if the account was locked by this failed attempt
-     */
-    private boolean registerFailedLoginAttempt(String email) {
-        SystemSettings settings = systemSettingsService.getOrCreate();
-        int maxAttempts = settings.getMaxFailedLoginAttempts();
-        if (maxAttempts <= 0 || email == null || email.isBlank()) {
-            return false;
-        }
-
-        return userRepository.findByEmail(email.trim()).map(user -> {
-            if (!user.isEnabled()) {
-                return false;
-            }
-            int attempts = user.registerFailedLogin();
-            if (attempts >= maxAttempts) {
-                user.changeEnabled(false);
-                userRepository.save(user);
-                refreshTokenService.revokeAllActiveSessions(user.getId());
-                return true;
-            }
-            userRepository.save(user);
-            return false;
-        }).orElse(false);
     }
 
     @Transactional
