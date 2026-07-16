@@ -23,4 +23,10 @@ export const demoRoutes = [
     component: () => import('./views/DemoPopupView.vue'),
     meta: { requiresMenu: true },
   },
+  {
+    path: 'demo/upload',
+    name: 'demo-upload',
+    component: () => import('./views/DemoUploadView.vue'),
+    meta: { requiresMenu: true },
+  },
 ]

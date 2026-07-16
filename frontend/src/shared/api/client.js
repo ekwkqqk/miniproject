@@ -43,6 +43,14 @@ client.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // FormData는 boundary가 필요하므로 기본 JSON Content-Type을 제거한다
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (typeof config.headers?.delete === 'function') {
+      config.headers.delete('Content-Type')
+    } else if (config.headers) {
+      delete config.headers['Content-Type']
+    }
+  }
   return config
 })
 

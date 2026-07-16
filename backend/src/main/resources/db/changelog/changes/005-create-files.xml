@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="005-create-files" author="miniproject">
+        <createTable tableName="pjt_files">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_files"/>
+            </column>
+            <column name="original_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stored_name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_pjt_files_stored_name"/>
+            </column>
+            <column name="content_type" type="VARCHAR(200)"/>
+            <column name="size_bytes" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="uploaded_by" type="BIGINT"/>
+            <column name="uploaded_by_email" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="pjt_files" indexName="ix_pjt_files_created_at">
+            <column name="created_at" descending="true"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="pjt_files" baseColumnNames="uploaded_by"
+                                 referencedTableName="pjt_users" referencedColumnNames="id"
+                                 constraintName="fk_pjt_files_user"
+                                 onDelete="SET NULL"/>
+    </changeSet>
+
+</databaseChangeLog>

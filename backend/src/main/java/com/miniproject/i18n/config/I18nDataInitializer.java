@@ -123,6 +123,7 @@ public class I18nDataInitializer {
         ensureMessage(menu, "demoView", "조회 화면", ko, "조회 화면", en, "View");
         ensureMessage(menu, "demoEdit", "수정 화면", ko, "수정 화면", en, "Edit");
         ensureMessage(menu, "demoPopup", "팝업 테스트", ko, "팝업 테스트", en, "Popup");
+        ensureMessage(menu, "demoUpload", "파일 첨부", ko, "파일 첨부", en, "File Attach");
     }
 
     private void seedTableMessages(I18nMessageGroup table, I18nLocale ko, I18nLocale en) {
@@ -253,6 +254,7 @@ public class I18nDataInitializer {
         bindMenuByUrl("/demo/view", "menu.demoView");
         bindMenuByUrl("/demo/edit", "menu.demoEdit");
         bindMenuByUrl("/demo/popup", "menu.demoPopup");
+        bindMenuByUrl("/demo/upload", "menu.demoUpload");
 
         bindMenuFolderByName("시스템 관리", "menu.system");
         bindMenuFolderByName("다국어 관리", "menu.i18n");

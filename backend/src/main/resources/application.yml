@@ -4,6 +4,10 @@ spring:
   liquibase:
     enabled: ${LIQUIBASE_ENABLED:true}
     change-log: classpath:db/changelog/db.changelog-master.xml
+  servlet:
+    multipart:
+      max-file-size: ${FILE_MAX_SIZE:20MB}
+      max-request-size: ${FILE_MAX_REQUEST_SIZE:50MB}
 
 app:
   jwt:
@@ -12,5 +16,8 @@ app:
     refresh-expiration-ms: 604800000
   mail:
     enabled: ${MAIL_ENABLED:false}
+  file:
+    # 업로드 저장 경로 (절대/상대 경로 모두 가능). 없으면 디렉터리 자동 생성.
+    upload-dir: ${FILE_UPLOAD_DIR:./uploads}
   seed:
     system-admin-password: ${SYSTEM_ADMIN_PASSWORD:Admin123!}

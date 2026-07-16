@@ -33,3 +33,5 @@ springdoc:
 app:
   mail:
     enabled: ${MAIL_ENABLED:true}
+  file:
+    upload-dir: ${FILE_UPLOAD_DIR:/var/miniproject/uploads}

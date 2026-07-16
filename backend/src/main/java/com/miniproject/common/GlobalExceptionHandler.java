@@ -49,6 +49,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("접근 권한이 없습니다.", ErrorCode.FORBIDDEN.getCode()));
     }
 
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaxUploadSize(Exception ex) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error("업로드 용량 제한을 초과했습니다.", ErrorCode.INVALID_INPUT.getCode()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
