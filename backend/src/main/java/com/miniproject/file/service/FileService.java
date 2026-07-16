@@ -5,6 +5,7 @@ import com.miniproject.common.ErrorCode;
 import com.miniproject.file.domain.StoredFile;
 import com.miniproject.file.domain.StoredFileRepository;
 import com.miniproject.file.dto.FileResponse;
+import com.miniproject.file.dto.FileUploadResult;
 import com.miniproject.user.domain.UserRepository;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -35,10 +36,10 @@ public class FileService {
     }
 
     @Transactional
-    public List<FileResponse> upload(MultipartFile[] files,
-                                     String accept,
-                                     Integer limit,
-                                     String uploaderEmail) {
+    public FileUploadResult upload(MultipartFile[] files,
+                                   String accept,
+                                   Integer limit,
+                                   String uploaderEmail) {
         if (files == null || files.length == 0) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "업로드할 파일이 없습니다.");
         }
@@ -60,6 +61,7 @@ public class FileService {
                 .map(u -> u.getId())
                 .orElse(null);
 
+        Long fileGroupId = storedFileRepository.nextFileGroupId();
         List<FileResponse> results = new ArrayList<>();
         for (MultipartFile file : nonEmpty) {
             validateAccept(file, acceptRules);
@@ -68,6 +70,7 @@ public class FileService {
                     ? file.getOriginalFilename()
                     : storedName;
             StoredFile entity = new StoredFile(
+                    fileGroupId,
                     originalName,
                     storedName,
                     file.getContentType(),
@@ -78,12 +81,21 @@ public class FileService {
             storedFileRepository.save(entity);
             results.add(FileResponse.from(entity));
         }
-        return results;
+
+        List<Long> fileIds = results.stream().map(FileResponse::id).toList();
+        return new FileUploadResult(fileGroupId, fileIds, results);
     }
 
     @Transactional(readOnly = true)
     public FileResponse get(Long id) {
         return FileResponse.from(requireFile(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<FileResponse> getByFileGroupId(Long fileGroupId) {
+        return storedFileRepository.findByFileGroupId(fileGroupId).stream()
+                .map(FileResponse::from)
+                .toList();
     }
 
     @Transactional(readOnly = true)

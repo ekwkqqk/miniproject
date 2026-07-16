@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 public record FileResponse(
         Long id,
+        Long fileGroupId,
         String originalName,
         String contentType,
         long sizeBytes,
@@ -15,6 +16,7 @@ public record FileResponse(
     public static FileResponse from(StoredFile file) {
         return new FileResponse(
                 file.getId(),
+                file.getFileGroupId(),
                 file.getOriginalName(),
                 file.getContentType(),
                 file.getSizeBytes(),

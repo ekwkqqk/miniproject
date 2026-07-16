@@ -2,6 +2,7 @@ package com.miniproject.file.controller;
 
 import com.miniproject.common.ApiResponse;
 import com.miniproject.file.dto.FileResponse;
+import com.miniproject.file.dto.FileUploadResult;
 import com.miniproject.file.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,15 +35,21 @@ public class FileController {
         this.fileService = fileService;
     }
 
-    @Operation(summary = "파일 업로드 (multipart)")
+    @Operation(summary = "파일 업로드 (multipart) — 동일 요청의 파일은 같은 fileGroupId")
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<List<FileResponse>> upload(
+    public ApiResponse<FileUploadResult> upload(
             @RequestParam("files") MultipartFile[] files,
             @RequestParam(value = "accept", required = false) String accept,
             @RequestParam(value = "limit", required = false) Integer limit,
             @AuthenticationPrincipal String email
     ) {
         return ApiResponse.success(fileService.upload(files, accept, limit, email));
+    }
+
+    @Operation(summary = "파일 그룹으로 목록 조회")
+    @GetMapping("/groups/{fileGroupId}")
+    public ApiResponse<List<FileResponse>> getByGroup(@PathVariable Long fileGroupId) {
+        return ApiResponse.success(fileService.getByFileGroupId(fileGroupId));
     }
 
     @Operation(summary = "파일 메타데이터 조회")

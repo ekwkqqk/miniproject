@@ -1,7 +1,8 @@
 import client, { getErrorMessage } from '@/shared/api/client'
 
 /**
- * multipart 업로드 — JSON Content-Type을 제거해 boundary가 자동 설정되도록 함
+ * multipart 업로드 — 동일 요청 파일들은 같은 fileGroupId로 묶임
+ * @returns {{ success, data: { fileGroupId, fileIds, files } }}
  */
 export async function uploadFiles(files, { accept, limit } = {}) {
   const form = new FormData()
@@ -13,6 +14,15 @@ export async function uploadFiles(files, { accept, limit } = {}) {
 
   try {
     const { data } = await client.post('/files/upload', form)
+    return data
+  } catch (error) {
+    throw new Error(getErrorMessage(error))
+  }
+}
+
+export async function getFilesByGroup(fileGroupId) {
+  try {
+    const { data } = await client.get(`/files/groups/${fileGroupId}`)
     return data
   } catch (error) {
     throw new Error(getErrorMessage(error))

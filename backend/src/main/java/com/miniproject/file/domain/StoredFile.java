@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public class StoredFile {
 
     private Long id;
+    private Long fileGroupId;
     private String originalName;
     private String storedName;
     private String contentType;
@@ -16,12 +17,14 @@ public class StoredFile {
     protected StoredFile() {
     }
 
-    public StoredFile(String originalName,
+    public StoredFile(Long fileGroupId,
+                      String originalName,
                       String storedName,
                       String contentType,
                       long sizeBytes,
                       Long uploadedBy,
                       String uploadedByEmail) {
+        this.fileGroupId = fileGroupId;
         this.originalName = originalName;
         this.storedName = storedName;
         this.contentType = contentType;
@@ -37,6 +40,14 @@ public class StoredFile {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getFileGroupId() {
+        return fileGroupId;
+    }
+
+    public void setFileGroupId(Long fileGroupId) {
+        this.fileGroupId = fileGroupId;
     }
 
     public String getOriginalName() {

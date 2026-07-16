@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="006-add-file-group-id" author="miniproject">
+        <createSequence sequenceName="pjt_file_group_id_seq" startValue="1" incrementBy="1"/>
+        <addColumn tableName="pjt_files">
+            <column name="file_group_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <createIndex tableName="pjt_files" indexName="ix_pjt_files_file_group_id">
+            <column name="file_group_id"/>
+        </createIndex>
+        <!-- 기존 행: 각자 고유 그룹으로 채움 (id 사용) -->
+        <sql>
+            UPDATE pjt_files SET file_group_id = id WHERE file_group_id IS NULL;
+            SELECT setval('pjt_file_group_id_seq', GREATEST((SELECT COALESCE(MAX(file_group_id), 1) FROM pjt_files), 1));
+        </sql>
+        <addNotNullConstraint tableName="pjt_files" columnName="file_group_id" columnDataType="BIGINT"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -5,6 +5,7 @@
 
     <resultMap id="StoredFileResultMap" type="com.miniproject.file.domain.StoredFile">
         <id property="id" column="id"/>
+        <result property="fileGroupId" column="file_group_id"/>
         <result property="originalName" column="original_name"/>
         <result property="storedName" column="stored_name"/>
         <result property="contentType" column="content_type"/>
@@ -15,7 +16,7 @@
     </resultMap>
 
     <sql id="FileColumns">
-        id, original_name, stored_name, content_type, size_bytes,
+        id, file_group_id, original_name, stored_name, content_type, size_bytes,
         uploaded_by, uploaded_by_email, created_at
     </sql>
 
@@ -25,12 +26,23 @@
         WHERE id = #{id}
     </select>
 
+    <select id="findByFileGroupId" resultMap="StoredFileResultMap">
+        SELECT <include refid="FileColumns"/>
+        FROM pjt_files
+        WHERE file_group_id = #{fileGroupId}
+        ORDER BY id ASC
+    </select>
+
+    <select id="nextFileGroupId" resultType="long">
+        SELECT nextval('pjt_file_group_id_seq')
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO pjt_files (
-            original_name, stored_name, content_type, size_bytes,
+            file_group_id, original_name, stored_name, content_type, size_bytes,
             uploaded_by, uploaded_by_email, created_at
         ) VALUES (
-            #{originalName}, #{storedName}, #{contentType}, #{sizeBytes},
+            #{fileGroupId}, #{originalName}, #{storedName}, #{contentType}, #{sizeBytes},
             #{uploadedBy}, #{uploadedByEmail}, #{createdAt}
         )
     </insert>

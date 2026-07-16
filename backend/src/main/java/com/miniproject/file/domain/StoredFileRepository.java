@@ -1,13 +1,19 @@
 package com.miniproject.file.domain;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 @Mapper
 public interface StoredFileRepository {
 
     Optional<StoredFile> findById(Long id);
+
+    List<StoredFile> findByFileGroupId(@Param("fileGroupId") Long fileGroupId);
+
+    Long nextFileGroupId();
 
     int insert(StoredFile file);
 
