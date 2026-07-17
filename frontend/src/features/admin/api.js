@@ -40,6 +40,10 @@ export function createUser(payload) {
   return client.post('/admin/users', payload)
 }
 
+export function updateUser(userId, payload) {
+  return client.put(`/admin/users/${userId}`, payload)
+}
+
 export function updateUserRoles(userId, roleIds) {
   return client.put(`/admin/users/${userId}/roles`, { roleIds })
 }

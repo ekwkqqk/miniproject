@@ -29,7 +29,10 @@ export async function setupRouterGuards(router) {
     }
 
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-      return { name: 'login' }
+      return {
+        name: 'login',
+        query: to.fullPath && to.fullPath !== '/' ? { redirect: to.fullPath } : {},
+      }
     }
 
     if (to.meta.guestOnly && authStore.isAuthenticated) {

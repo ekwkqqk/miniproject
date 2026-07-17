@@ -13,6 +13,7 @@ import com.miniproject.settings.service.SystemSettingsService;
 import com.miniproject.user.domain.User;
 import com.miniproject.user.domain.UserRepository;
 import com.miniproject.user.dto.CreateUserRequest;
+import com.miniproject.user.dto.UpdateUserRequest;
 import com.miniproject.user.dto.UpdateUserEnabledRequest;
 import com.miniproject.user.dto.UpdateUserRolesRequest;
 import com.miniproject.user.dto.UserResponse;
@@ -92,6 +93,44 @@ public class AdminUserService {
         for (String roleCode : roleCodes) {
             Role role = roleService.getByCode(roleCode);
             userRoleRepository.save(new UserRole(saved, role));
+        }
+        return toUserResponse(saved);
+    }
+
+    @Transactional
+    public UserResponse updateUser(Long userId, UpdateUserRequest request, String adminEmail) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+        Set<Long> roleIds = new HashSet<>(request.getRoleIds());
+        if (roleIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "Role을 하나 이상 지정해주세요.");
+        }
+
+        Set<Long> currentRoleIds = userRoleRepository.findByUserId(userId).stream()
+                .map(UserRole::getRoleId)
+                .collect(Collectors.toSet());
+        boolean isSelf = user.getEmail().equals(adminEmail);
+        boolean enabled = Boolean.TRUE.equals(request.getEnabled());
+
+        if (isSelf && (user.isEnabled() != enabled || !currentRoleIds.equals(roleIds))) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "본인의 활성 상태와 Role은 변경할 수 없습니다.");
+        }
+
+        user.setName(request.getName().trim());
+        user.changeEnabled(enabled);
+        User saved = userRepository.save(user);
+
+        if (!currentRoleIds.equals(roleIds)) {
+            userRoleRepository.deleteByUserId(userId);
+            for (Long roleId : roleIds) {
+                Role role = roleService.getRequiredRole(roleId);
+                userRoleRepository.save(new UserRole(saved, role));
+            }
+        }
+
+        if (!saved.isEnabled()) {
+            refreshTokenService.revokeAllActiveSessions(saved.getId());
         }
         return toUserResponse(saved);
     }

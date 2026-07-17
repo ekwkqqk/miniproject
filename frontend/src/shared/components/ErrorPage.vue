@@ -22,7 +22,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const primaryAction = computed(() => {
-  if (props.code === 401) {
+  if (props.code === 401 || !authStore.isAuthenticated) {
     return { label: '로그인', to: 'login' }
   }
   return { label: '대시보드로', to: 'dashboard' }

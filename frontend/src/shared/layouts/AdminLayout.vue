@@ -159,7 +159,7 @@ function toggleNav() {
 }
 
 .sidebar {
-  background: #1f2d3d;
+  background: var(--app-sidebar-bg, #1f2d3d);
   color: #fff;
   height: 100vh;
   position: sticky;
@@ -247,7 +247,7 @@ function toggleNav() {
 <style>
 /* Drawer body flush with dark nav */
 .nav-drawer.el-drawer {
-  background: #1f2d3d;
+  background: var(--app-sidebar-bg, #1f2d3d);
 }
 
 .nav-drawer .el-drawer__body {

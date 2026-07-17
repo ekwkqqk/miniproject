@@ -32,7 +32,7 @@ function onSelect() {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #1f2d3d;
+  background: var(--app-sidebar-bg, #1f2d3d);
 }
 
 .logo {
@@ -52,11 +52,21 @@ function onSelect() {
 
 :deep(.el-menu-item),
 :deep(.el-sub-menu__title) {
-  color: #d3dce6;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+:deep(.el-menu-item:hover),
+:deep(.el-sub-menu__title:hover) {
+  background: var(--app-sidebar-hover-bg, rgba(255, 255, 255, 0.12)) !important;
+  color: #fff;
 }
 
 :deep(.el-menu-item.is-active) {
-  background: #263445 !important;
+  background: var(--app-sidebar-active-bg, #263445) !important;
   color: #fff;
+}
+
+:deep(.el-sub-menu .el-menu) {
+  background: transparent;
 }
 </style>

@@ -55,7 +55,14 @@ function applyThemeColor(color) {
       mix('#FFFFFF', primary, level * 10)
     )
   })
-  root.style.setProperty('--el-color-primary-dark-2', mix('#000000', primary, 20))
+  const primaryDark = mix('#000000', primary, 20)
+  root.style.setProperty('--el-color-primary-dark-2', primaryDark)
+
+  // 사이드바/메뉴 배경도 테마색 반영 (본색 + 활성·호버용 어두운 톤)
+  root.style.setProperty('--app-sidebar-bg', primary)
+  root.style.setProperty('--app-sidebar-active-bg', primaryDark)
+  root.style.setProperty('--app-sidebar-hover-bg', mix('#FFFFFF', primary, 12))
+
   localStorage.setItem(THEME_KEY, primary)
 }
 

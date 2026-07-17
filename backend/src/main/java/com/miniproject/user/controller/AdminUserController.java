@@ -2,6 +2,7 @@ package com.miniproject.user.controller;
 
 import com.miniproject.common.ApiResponse;
 import com.miniproject.user.dto.CreateUserRequest;
+import com.miniproject.user.dto.UpdateUserRequest;
 import com.miniproject.user.dto.UpdateUserEnabledRequest;
 import com.miniproject.user.dto.UpdateUserRolesRequest;
 import com.miniproject.user.dto.UserResponse;
@@ -36,6 +37,16 @@ public class AdminUserController {
     @PostMapping
     public ApiResponse<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         return ApiResponse.success(adminUserService.createUser(request), "사용자가 추가되었습니다.");
+    }
+
+    @PutMapping("/{userId}")
+    public ApiResponse<UserResponse> updateUser(@PathVariable Long userId,
+                                                @Valid @RequestBody UpdateUserRequest request,
+                                                @AuthenticationPrincipal String adminEmail) {
+        return ApiResponse.success(
+                adminUserService.updateUser(userId, request, adminEmail),
+                "사용자 정보가 수정되었습니다."
+        );
     }
 
     @PutMapping("/{userId}/roles")

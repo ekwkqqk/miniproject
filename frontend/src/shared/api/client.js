@@ -1,6 +1,7 @@
 import axios from 'axios'
 import router from '@/router'
-import { getAccessToken, setAuthSession, clearAccessToken } from '@/features/auth/tokenHolder'
+import { getAccessToken, clearAccessToken } from '@/features/auth/tokenHolder'
+import { refreshSession } from '@/features/auth/refreshSession'
 
 const client = axios.create({
   baseURL: '/api',
@@ -38,6 +39,18 @@ function goToErrorPage(name) {
   }
 }
 
+function goToLogin() {
+  clearAccessToken()
+  const current = router.currentRoute.value
+  if (current.name === 'login') return
+
+  const query = {}
+  if (current.meta?.requiresAuth && current.fullPath) {
+    query.redirect = current.fullPath
+  }
+  router.push({ name: 'login', query })
+}
+
 client.interceptors.request.use((config) => {
   const token = getAccessToken()
   if (token) {
@@ -60,15 +73,20 @@ client.interceptors.response.use(
     const originalRequest = error.config
     const status = error.response?.status
 
+    // 실제 권한 부족만 403 페이지로. 토큰 만료는 백엔드가 401로 내려준다.
     if (status === 403) {
       goToErrorPage('forbidden')
       return Promise.reject(error)
     }
 
     if (status !== 401 || !originalRequest || originalRequest._retry) {
+      if (status === 401 && !isAuthRequest(originalRequest?.url)) {
+        goToLogin()
+      }
       return Promise.reject(error)
     }
 
+    // 로그인/회원가입 실패(잘못된 비밀번호 등)는 로그인 강제 이동하지 않음
     if (isAuthRequest(originalRequest.url)) {
       return Promise.reject(error)
     }
@@ -86,19 +104,13 @@ client.interceptors.response.use(
     isRefreshing = true
 
     try {
-      const { data } = await axios.post('/api/auth/refresh', null, { withCredentials: true })
-      const newAccessToken = data.data.accessToken
-
-      setAuthSession(newAccessToken, data.data.user)
-      processQueue(null, newAccessToken)
-      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+      const { accessToken } = await refreshSession()
+      processQueue(null, accessToken)
+      originalRequest.headers.Authorization = `Bearer ${accessToken}`
       return client(originalRequest)
     } catch (refreshError) {
       processQueue(refreshError, null)
-      clearAccessToken()
-      if (router.currentRoute.value.name !== 'login') {
-        router.push({ name: 'login' })
-      }
+      goToLogin()
       return Promise.reject(refreshError)
     } finally {
       isRefreshing = false

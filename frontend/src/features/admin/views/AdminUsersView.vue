@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '@/features/auth/store'
 import { useSettingsStore } from '@/features/settings/store'
 import * as adminApi from '@/features/admin/api'
@@ -23,6 +23,8 @@ const roles = ref([])
 const loading = ref(false)
 const createVisible = ref(false)
 const creating = ref(false)
+const editVisible = ref(false)
+const saving = ref(false)
 
 const createForm = reactive({
   name: '',
@@ -30,6 +32,16 @@ const createForm = reactive({
   password: '',
   enabled: true,
 })
+
+const editForm = reactive({
+  id: null,
+  name: '',
+  email: '',
+  enabled: true,
+  roleIds: [],
+})
+
+const editingSelf = computed(() => editForm.email === authStore.user?.email)
 
 async function load() {
   loading.value = true
@@ -50,6 +62,49 @@ function openCreate() {
   createForm.password = ''
   createForm.enabled = true
   createVisible.value = true
+}
+
+function openEdit(user) {
+  if (!canUpdate.value) return
+  editForm.id = user.id
+  editForm.name = user.name
+  editForm.email = user.email
+  editForm.enabled = user.enabled
+  editForm.roleIds = user.roles?.map((role) => role.id) || []
+  editVisible.value = true
+}
+
+async function handleEditSave() {
+  if (!editForm.name.trim()) {
+    ElMessage.warning('이름을 입력해주세요.')
+    return
+  }
+  if (!editForm.roleIds.length) {
+    ElMessage.warning('Role을 하나 이상 선택해주세요.')
+    return
+  }
+
+  saving.value = true
+  try {
+    const { data } = await adminApi.updateUser(editForm.id, {
+      name: editForm.name.trim(),
+      enabled: editForm.enabled,
+      roleIds: editForm.roleIds,
+    })
+    if (data.success) {
+      const index = users.value.findIndex((user) => user.id === editForm.id)
+      if (index >= 0) users.value[index] = data.data
+      if (editingSelf.value) {
+        await authStore.fetchMe()
+      }
+      ElMessage.success('사용자 정보가 수정되었습니다.')
+      editVisible.value = false
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || error.message)
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleCreate() {
@@ -147,7 +202,15 @@ onMounted(() => {
         <article v-for="row in users" :key="row.id" class="mobile-card">
           <div class="mobile-card__head">
             <div>
-              <strong>{{ row.name }}</strong>
+              <button
+                v-if="canUpdate"
+                type="button"
+                class="name-button"
+                @click="openEdit(row)"
+              >
+                {{ row.name }}
+              </button>
+              <strong v-else>{{ row.name }}</strong>
               <div class="email">{{ row.email }}</div>
             </div>
             <el-switch
@@ -181,7 +244,14 @@ onMounted(() => {
       <div v-else class="table-scroll">
         <el-table :data="users" stripe border style="width: 100%">
           <el-table-column prop="id" :label="tCode('table', 'id')" width="80" />
-          <el-table-column prop="name" :label="tCode('table', 'name')" width="140" />
+          <el-table-column prop="name" :label="tCode('table', 'name')" width="140">
+            <template #default="{ row }">
+              <el-button v-if="canUpdate" link type="primary" @click="openEdit(row)">
+                {{ row.name }}
+              </el-button>
+              <span v-else>{{ row.name }}</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="email" :label="tCode('table', 'email')" min-width="200" />
           <el-table-column :label="tCode('table', 'status')" width="120" align="center">
             <template #default="{ row }">
@@ -252,10 +322,62 @@ onMounted(() => {
         <el-button type="primary" :loading="creating" @click="handleCreate">추가</el-button>
       </template>
     </ResponsiveDialog>
+
+    <ResponsiveDialog v-model="editVisible" title="사용자 수정" :width="520">
+      <el-form label-position="top" @submit.prevent="handleEditSave">
+        <el-form-item label="이름" required>
+          <el-input v-model="editForm.name" placeholder="이름" maxlength="100" />
+        </el-form-item>
+        <el-form-item label="이메일">
+          <el-input v-model="editForm.email" readonly />
+        </el-form-item>
+        <el-form-item label="활성화 여부">
+          <el-switch
+            v-model="editForm.enabled"
+            :disabled="editingSelf"
+            inline-prompt
+            active-text="활성"
+            inactive-text="비활성"
+          />
+          <span v-if="editingSelf" class="form-hint">본인 계정의 상태는 변경할 수 없습니다.</span>
+        </el-form-item>
+        <el-form-item label="Role" required>
+          <el-select
+            v-model="editForm.roleIds"
+            multiple
+            style="width: 100%"
+            :disabled="editingSelf"
+            placeholder="Role을 선택하세요"
+          >
+            <el-option
+              v-for="role in roles"
+              :key="role.id"
+              :label="`${role.name} (${role.code})`"
+              :value="role.id"
+            />
+          </el-select>
+          <span v-if="editingSelf" class="form-hint">본인의 Role은 변경할 수 없습니다.</span>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button :disabled="saving" @click="editVisible = false">취소</el-button>
+        <el-button type="primary" :loading="saving" @click="handleEditSave">저장</el-button>
+      </template>
+    </ResponsiveDialog>
   </PageLayout>
 </template>
 
 <style scoped>
+.name-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--el-color-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .email {
   margin-top: 2px;
   color: #909399;
@@ -264,6 +386,14 @@ onMounted(() => {
 
 .meta {
   margin-top: 8px;
+  color: #909399;
+  font-size: 12px;
+}
+
+.form-hint {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
   color: #909399;
   font-size: 12px;
 }

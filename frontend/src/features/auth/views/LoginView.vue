@@ -26,12 +26,20 @@ onMounted(() => {
   }
 })
 
+function resolvePostLoginTarget() {
+  const redirect = route.query.redirect
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    return redirect
+  }
+  return { name: 'dashboard' }
+}
+
 async function handleLogin() {
   loading.value = true
   try {
     await authStore.login(form)
     ElMessage.success('로그인되었습니다.')
-    router.push({ name: 'dashboard' })
+    router.push(resolvePostLoginTarget())
   } catch (error) {
     if (error.errorCode === 'PASSWORD_EXPIRED') {
       ElMessage.warning(error.message)

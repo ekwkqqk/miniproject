@@ -8,6 +8,7 @@ import {
   clearAccessToken,
   subscribeAuthListener,
 } from '@/features/auth/tokenHolder'
+import { isAccessTokenExpired, refreshSession } from '@/features/auth/refreshSession'
 import { useMenuStore } from '@/features/menu/store'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -41,23 +42,25 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function restoreSession() {
-    if (sessionReady.value) {
-      return isAuthenticated.value
+    // access token이 아직 유효하면 그대로 통과
+    if (!isAccessTokenExpired(getAccessToken())) {
+      sessionReady.value = true
+      return true
     }
 
+    // access 만료(또는 없음) → refresh cookie로 갱신 시도
+    // refresh도 만료/없으면 로그인 필요
     try {
-      const { data } = await authApi.refresh()
-      if (data.success) {
-        setSession(data.data)
-        await useMenuStore().fetchMyMenus()
-      }
+      const data = await refreshSession()
+      setSession(data)
+      await useMenuStore().fetchMyMenus()
+      sessionReady.value = true
+      return true
     } catch {
       clearSession()
-    } finally {
       sessionReady.value = true
+      return false
     }
-
-    return isAuthenticated.value
   }
 
   async function register(payload) {
