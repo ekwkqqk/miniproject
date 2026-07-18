@@ -88,17 +88,18 @@ public class MenuService {
         }
         List<Long> roleIds = roles.stream().map(Role::getId).toList();
         Set<Long> accessibleLeafIds = menuRoleRepository.findMenusByRoleIds(roleIds).stream()
-                .filter(menu -> !menu.isFolder())
+                .filter(menu -> !menu.isFolder() && menu.isEnabled())
                 .map(Menu::getId)
                 .collect(Collectors.toSet());
-
-        if (accessibleLeafIds.isEmpty()) {
-            return List.of();
-        }
 
         List<Menu> allMenus = menuRepository.findAllByOrderBySortOrderAscIdAsc();
         Map<Long, Menu> menuById = allMenus.stream()
                 .collect(Collectors.toMap(Menu::getId, Function.identity()));
+
+        accessibleLeafIds.removeIf(menuId -> !hasEnabledPath(menuId, menuById));
+        if (accessibleLeafIds.isEmpty()) {
+            return List.of();
+        }
 
         Set<Long> includeIds = new HashSet<>(accessibleLeafIds);
         for (Long leafId : accessibleLeafIds) {
@@ -146,6 +147,7 @@ public class MenuService {
         int sortOrder = request.getSortOrder() != null ? request.getSortOrder() : nextSortOrder(request.getParentId());
         Menu menu = new Menu(request.getName().trim(), url, sortOrder, parent);
         menu.changeNameI18nKey(resolveNameI18nKey(request.getNameI18nKey()));
+        menu.changeEnabled(Boolean.TRUE.equals(request.getEnabled()));
         menu = menuRepository.save(menu);
         applyRolesAndButtons(menu, request, folder);
         menuAccessLogService.invalidateMenuUrlCache();
@@ -179,6 +181,7 @@ public class MenuService {
         menu.changeName(request.getName().trim());
         menu.changeNameI18nKey(resolveNameI18nKey(request.getNameI18nKey()));
         menu.changeUrl(url);
+        menu.changeEnabled(Boolean.TRUE.equals(request.getEnabled()));
         if (request.getSortOrder() != null) {
             menu.changeSortOrder(request.getSortOrder());
         }
@@ -354,6 +357,7 @@ public class MenuService {
                 menu.getNameI18nKey(),
                 menu.getUrl(),
                 menu.getSortOrder(),
+                menu.isEnabled(),
                 menu.isFolder(),
                 roles,
                 roleButtons,
@@ -370,6 +374,7 @@ public class MenuService {
                 menu.getNameI18nKey(),
                 null,
                 menu.getSortOrder(),
+                menu.isEnabled(),
                 true,
                 List.of(),
                 List.of(),
@@ -389,6 +394,7 @@ public class MenuService {
                 menu.getNameI18nKey(),
                 menu.getUrl(),
                 menu.getSortOrder(),
+                menu.isEnabled(),
                 false,
                 List.of(),
                 List.of(),
@@ -472,6 +478,17 @@ public class MenuService {
             result.addAll(flattenLeaves(node.getChildren()));
         }
         return result;
+    }
+
+    private boolean hasEnabledPath(Long menuId, Map<Long, Menu> menuById) {
+        Menu current = menuById.get(menuId);
+        while (current != null) {
+            if (!current.isEnabled()) {
+                return false;
+            }
+            current = current.getParentId() == null ? null : menuById.get(current.getParentId());
+        }
+        return true;
     }
 
     private boolean isBlank(String value) {

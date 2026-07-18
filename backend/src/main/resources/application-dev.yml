@@ -24,6 +24,20 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
     default-executor-type: reuse
+    # SLF4J로 SQL 출력 (logger 레벨은 아래 logging.level 참고)
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# MyBatis mapper namespace(= Repository FQCN) DEBUG 시 SQL/파라미터 출력
+logging:
+  level:
+    com.miniproject.user.domain: DEBUG
+    com.miniproject.role.domain: DEBUG
+    com.miniproject.menu.domain: DEBUG
+    com.miniproject.i18n.domain: DEBUG
+    com.miniproject.auth.domain: DEBUG
+    com.miniproject.settings.domain: DEBUG
+    com.miniproject.mail.domain: DEBUG
+    com.miniproject.file.domain: DEBUG
 
 springdoc:
   api-docs:

@@ -25,6 +25,9 @@ public class MenuRequest {
 
     private Integer sortOrder;
 
+    @NotNull(message = "사용 여부를 입력해주세요.")
+    private Boolean enabled = true;
+
     private List<Long> roleIds = new ArrayList<>();
 
     @Valid
@@ -68,6 +71,14 @@ public class MenuRequest {
 
     public void setSortOrder(Integer sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public List<Long> getRoleIds() {

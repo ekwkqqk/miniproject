@@ -23,6 +23,12 @@ public interface I18nMessageRepository {
 
     List<I18nMessage> findAllWithGroup();
 
+    List<I18nMessage> findPage(@Param("groupCode") String groupCode,
+                               @Param("limit") int limit,
+                               @Param("offset") int offset);
+
+    long count(@Param("groupCode") String groupCode);
+
     int insert(I18nMessage message);
 
     int update(I18nMessage message);

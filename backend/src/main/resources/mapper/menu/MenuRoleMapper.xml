@@ -25,6 +25,7 @@
         <result property="nameI18nKey" column="m_name_i18n_key"/>
         <result property="url" column="m_url"/>
         <result property="sortOrder" column="m_sort_order"/>
+        <result property="enabled" column="m_enabled"/>
         <result property="createdAt" column="m_created_at"/>
     </resultMap>
 
@@ -63,7 +64,8 @@
     <select id="findMenusByRoleIds" resultMap="MenuResultMap">
         SELECT DISTINCT m.id AS m_id, m.parent_id AS m_parent_id, m.name AS m_name,
                m.name_i18n_key AS m_name_i18n_key, m.url AS m_url,
-               m.sort_order AS m_sort_order, m.created_at AS m_created_at
+               m.sort_order AS m_sort_order, m.enabled AS m_enabled,
+               m.created_at AS m_created_at
         FROM pjt_menu_roles mr
         JOIN pjt_menus m ON m.id = mr.menu_id
         WHERE mr.role_id IN

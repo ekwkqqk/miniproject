@@ -9,6 +9,7 @@ import { useI18n } from '@/features/i18n/useI18n'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
 import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
+import { formatDateTime } from '@/shared/utils/date'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 
@@ -236,7 +237,7 @@ onMounted(() => {
               :value="role.id"
             />
           </el-select>
-          <div class="meta">가입일 {{ row.createdAt }}</div>
+          <div class="meta">가입일 {{ formatDateTime(row.createdAt) }}</div>
         </article>
         <el-empty v-if="!users.length && !loading" description="사용자가 없습니다." />
       </div>
@@ -287,7 +288,11 @@ onMounted(() => {
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column prop="createdAt" :label="tCode('table', 'createdAt')" width="180" />
+          <el-table-column :label="tCode('table', 'createdAt')" width="180">
+            <template #default="{ row }">
+              {{ formatDateTime(row.createdAt) }}
+            </template>
+          </el-table-column>
         </el-table>
       </div>
     </ContentPanel>

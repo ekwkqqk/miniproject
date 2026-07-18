@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -142,6 +143,30 @@ public class I18nService {
         List<I18nMessage> messages = groupCode == null || groupCode.isBlank()
                 ? messageRepository.findAllWithGroup()
                 : messageRepository.findByGroupCode(groupCode.trim());
+        return toMessageResponses(messages);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getMessagesPage(String groupCode, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        int offset = (safePage - 1) * safeSize;
+        String normalizedGroup = blankToNull(groupCode);
+
+        List<I18nMessageRequest.Response> items = toMessageResponses(
+                messageRepository.findPage(normalizedGroup, safeSize, offset)
+        );
+        long total = messageRepository.count(normalizedGroup);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("items", items);
+        result.put("page", safePage);
+        result.put("size", safeSize);
+        result.put("total", total);
+        return result;
+    }
+
+    private List<I18nMessageRequest.Response> toMessageResponses(List<I18nMessage> messages) {
         if (messages.isEmpty()) {
             return List.of();
         }

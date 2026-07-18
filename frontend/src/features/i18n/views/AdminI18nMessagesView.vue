@@ -14,6 +14,9 @@ const { tCode } = useI18n()
 const locales = ref([])
 const groups = ref([])
 const messages = ref([])
+const total = ref(0)
+const page = ref(1)
+const size = ref(10)
 const loading = ref(false)
 const filterGroup = ref('')
 const dialogVisible = ref(false)
@@ -27,6 +30,7 @@ const form = ref({
 
 const previewParams = ref('{"name":"홍길동","0":"10","1":"3"}')
 const previewLocale = ref('ko')
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
 const previewText = computed(() => {
   if (!dialogVisible.value) return ''
   const template = form.value.texts[previewLocale.value] || ''
@@ -56,8 +60,16 @@ async function loadMeta() {
 async function loadMessages() {
   loading.value = true
   try {
-    const { data } = await i18nAdminApi.getMessages(filterGroup.value || undefined)
-    if (data.success) messages.value = data.data
+    const { data } = await i18nAdminApi.getMessagePage({
+      group: filterGroup.value || undefined,
+      page: page.value,
+      size: size.value,
+    })
+    if (data.success) {
+      messages.value = data.data.items || []
+      total.value = data.data.total || 0
+      page.value = data.data.page || page.value
+    }
   } catch (error) {
     ElMessage.error(error.response?.data?.message || error.message)
   } finally {
@@ -122,6 +134,10 @@ async function handleDelete(row) {
     if (data.success) {
       ElMessage.success('메시지가 삭제되었습니다.')
       await loadMessages()
+      if (!messages.value.length && total.value > 0 && page.value > 1) {
+        page.value -= 1
+        await loadMessages()
+      }
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -137,10 +153,23 @@ function textSummary(row) {
 }
 
 function handleReset() {
+  page.value = 1
+  if (!filterGroup.value) {
+    loadMessages()
+    return
+  }
   filterGroup.value = ''
 }
 
-watch(filterGroup, loadMessages)
+function handleSearch() {
+  page.value = 1
+  loadMessages()
+}
+
+watch(filterGroup, () => {
+  page.value = 1
+  loadMessages()
+})
 
 onMounted(async () => {
   await loadMeta()
@@ -149,12 +178,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <PageLayout title="메시지 관리" subtitle="다국어 메시지 코드·번역 관리" :count="messages.length">
+  <PageLayout title="메시지 관리" subtitle="다국어 메시지 코드·번역 관리" :count="total">
     <template #actions>
       <el-button v-if="canUpdate" type="primary" @click="openCreate">메시지 등록</el-button>
     </template>
 
-    <SearchPanel title="검색 조건" @search="loadMessages" @reset="handleReset">
+    <SearchPanel title="검색 조건" @search="handleSearch" @reset="handleReset">
       <el-form-item label="그룹" class="filter-item">
         <el-select v-model="filterGroup" clearable placeholder="전체 그룹" style="width: 100%">
           <el-option v-for="g in groups" :key="g.code" :label="`${g.name} (${g.code})`" :value="g.code" />
@@ -162,7 +191,12 @@ onMounted(async () => {
       </el-form-item>
     </SearchPanel>
 
-    <ContentPanel title="메시지 목록" :loading="loading">
+    <ContentPanel
+      title="메시지 목록"
+      :count="messages.length"
+      count-label="현재 페이지 {n}건"
+      :loading="loading"
+    >
       <p class="hint">
         파라미터는 <code>{name}</code> 또는 <code>{0}</code>, <code>{1}</code> 형식으로 작성합니다.
       </p>
@@ -184,6 +218,19 @@ onMounted(async () => {
           </el-table-column>
         </el-table>
       </div>
+
+      <template #footer>
+        <el-pagination
+          v-model:current-page="page"
+          :page-size="size"
+          :total="total"
+          :pager-count="5"
+          layout="total, prev, pager, next"
+          background
+          @current-change="loadMessages"
+        />
+        <span class="page-info">{{ page }} / {{ totalPages }} 페이지</span>
+      </template>
     </ContentPanel>
 
     <ResponsiveDialog v-model="dialogVisible" :title="editingId ? '메시지 수정' : '메시지 등록'" :width="640">
@@ -236,5 +283,10 @@ onMounted(async () => {
 .summary {
   font-size: 12px;
   color: #555;
+}
+
+.page-info {
+  color: #909399;
+  font-size: 13px;
 }
 </style>

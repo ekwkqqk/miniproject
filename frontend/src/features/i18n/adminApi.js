@@ -36,6 +36,10 @@ export function getMessages(group) {
   return client.get('/admin/i18n/messages', { params: group ? { group } : {} })
 }
 
+export function getMessagePage(params = {}) {
+  return client.get('/admin/i18n/messages/page', { params })
+}
+
 export function createMessage(payload) {
   return client.post('/admin/i18n/messages', payload)
 }

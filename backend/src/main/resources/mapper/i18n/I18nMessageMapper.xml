@@ -78,6 +78,26 @@
         ORDER BY g.id ASC, m.id ASC
     </select>
 
+    <select id="findPage" resultMap="I18nMessageWithGroupMap">
+        SELECT <include refid="MessageWithGroupSelect"/>
+        FROM pjt_i18n_messages m
+        JOIN pjt_i18n_message_groups g ON g.id = m.group_id
+        <if test="groupCode != null and groupCode != ''">
+            WHERE g.code = #{groupCode}
+        </if>
+        ORDER BY g.id ASC, m.id ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM pjt_i18n_messages m
+        JOIN pjt_i18n_message_groups g ON g.id = m.group_id
+        <if test="groupCode != null and groupCode != ''">
+            WHERE g.code = #{groupCode}
+        </if>
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO pjt_i18n_messages (group_id, code, description, created_at)
         VALUES (#{groupId}, #{code}, #{description}, #{createdAt})

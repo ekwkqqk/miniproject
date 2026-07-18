@@ -5,6 +5,7 @@ import { useBreakpoint } from '@/shared/composables/useBreakpoint'
 import { useI18n } from '@/features/i18n/useI18n'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
+import { formatDateTime } from '@/shared/utils/date'
 import { ElMessage } from 'element-plus'
 
 const { isMobile } = useBreakpoint()
@@ -61,7 +62,7 @@ onMounted(load)
           </div>
           <dl class="meta-grid">
             <div><dt>사용자</dt><dd>{{ row.userEmail }}</dd></div>
-            <div><dt>시각</dt><dd>{{ row.accessedAt }}</dd></div>
+            <div><dt>시각</dt><dd>{{ formatDateTime(row.accessedAt) }}</dd></div>
             <div><dt>IP</dt><dd>{{ row.clientIp || '-' }}</dd></div>
             <div><dt>상태</dt><dd>{{ row.httpStatus }}</dd></div>
           </dl>
@@ -71,7 +72,11 @@ onMounted(load)
 
       <div v-else class="table-scroll">
         <el-table :data="items" stripe border style="width: 100%">
-          <el-table-column prop="accessedAt" :label="tCode('table', 'accessedAt')" width="180" />
+          <el-table-column :label="tCode('table', 'accessedAt')" width="180">
+            <template #default="{ row }">
+              {{ formatDateTime(row.accessedAt) }}
+            </template>
+          </el-table-column>
           <el-table-column prop="userEmail" :label="tCode('table', 'user')" min-width="180" />
           <el-table-column :label="tCode('table', 'type')" width="90" align="center">
             <template #default="{ row }">

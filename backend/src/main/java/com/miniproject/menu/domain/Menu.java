@@ -12,6 +12,7 @@ public class Menu {
     private String nameI18nKey;
     private String url;
     private int sortOrder;
+    private boolean enabled = true;
     private LocalDateTime createdAt;
 
     protected Menu() {
@@ -21,6 +22,7 @@ public class Menu {
         this.name = name;
         this.url = url;
         this.sortOrder = sortOrder;
+        this.enabled = true;
         this.parent = parent;
         this.parentId = parent == null ? null : parent.getId();
         this.createdAt = LocalDateTime.now();
@@ -83,6 +85,14 @@ public class Menu {
         this.sortOrder = sortOrder;
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -114,5 +124,9 @@ public class Menu {
 
     public void changeSortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public void changeEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/i18n")
@@ -76,6 +77,14 @@ public class AdminI18nController {
     public ApiResponse<List<I18nMessageRequest.Response>> getMessages(
             @RequestParam(required = false) String group) {
         return ApiResponse.success(i18nService.getMessages(group));
+    }
+
+    @GetMapping("/messages/page")
+    public ApiResponse<Map<String, Object>> getMessagesPage(
+            @RequestParam(required = false) String group,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.success(i18nService.getMessagesPage(group, page, size));
     }
 
     @PostMapping("/messages")

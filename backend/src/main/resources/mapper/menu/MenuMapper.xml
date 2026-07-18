@@ -10,11 +10,12 @@
         <result property="nameI18nKey" column="name_i18n_key"/>
         <result property="url" column="url"/>
         <result property="sortOrder" column="sort_order"/>
+        <result property="enabled" column="enabled"/>
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
     <sql id="MenuColumns">
-        id, parent_id, name, name_i18n_key, url, sort_order, created_at
+        id, parent_id, name, name_i18n_key, url, sort_order, enabled, created_at
     </sql>
 
     <select id="findById" resultMap="MenuResultMap">
@@ -61,8 +62,8 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        INSERT INTO pjt_menus (parent_id, name, name_i18n_key, url, sort_order, created_at)
-        VALUES (#{parentId}, #{name}, #{nameI18nKey}, #{url}, #{sortOrder}, #{createdAt})
+        INSERT INTO pjt_menus (parent_id, name, name_i18n_key, url, sort_order, enabled, created_at)
+        VALUES (#{parentId}, #{name}, #{nameI18nKey}, #{url}, #{sortOrder}, #{enabled}, #{createdAt})
     </insert>
 
     <update id="update">
@@ -71,7 +72,8 @@
             name = #{name},
             name_i18n_key = #{nameI18nKey},
             url = #{url},
-            sort_order = #{sortOrder}
+            sort_order = #{sortOrder},
+            enabled = #{enabled}
         WHERE id = #{id}
     </update>
 

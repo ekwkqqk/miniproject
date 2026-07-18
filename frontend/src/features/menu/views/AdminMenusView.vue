@@ -41,6 +41,7 @@ const emptyForm = () => ({
   name: '',
   nameI18nKey: '',
   url: '',
+  enabled: true,
   roleIds: [],
   roleButtons: {},
 })
@@ -180,6 +181,7 @@ function selectMenu(menu) {
     name: menu.name,
     nameI18nKey: menu.nameI18nKey || '',
     url: menu.url || '',
+    enabled: menu.enabled !== false,
     roleIds: menu.roles?.map((r) => r.id) || [],
     roleButtons,
   }
@@ -286,6 +288,7 @@ function buildPayload() {
     name: form.value.name,
     nameI18nKey: form.value.nameI18nKey || null,
     url: folder ? '' : form.value.url,
+    enabled: form.value.enabled,
     roleIds: folder ? [] : form.value.roleIds,
     roleButtons: folder
       ? []
@@ -448,11 +451,14 @@ onMounted(load)
           @node-drop="onNodeDrop"
         >
           <template #default="{ data }">
-            <span class="tree-node">
+            <span class="tree-node" :class="{ 'tree-node--disabled': !data.enabled }">
               <el-tag :type="data.folder ? 'info' : 'success'" size="small" effect="plain">
                 {{ data.folder ? '폴더' : '화면' }}
               </el-tag>
               <span class="tree-node-name">{{ data.name }}</span>
+              <el-tag v-if="!data.enabled" type="danger" size="small" effect="plain">
+                미사용
+              </el-tag>
             </span>
           </template>
         </el-tree>
@@ -526,6 +532,19 @@ onMounted(load)
               :disabled="!canUpdate"
               placeholder="/example 또는 비움(폴더)"
             />
+          </el-form-item>
+
+          <el-form-item label="사용 여부">
+            <el-switch
+              v-model="form.enabled"
+              :disabled="!canUpdate"
+              inline-prompt
+              active-text="사용"
+              inactive-text="미사용"
+            />
+            <span class="field-hint">
+              미사용 메뉴와 그 하위 메뉴는 사용자 사이드바에 표시되지 않습니다.
+            </span>
           </el-form-item>
 
           <template v-if="!isFolder">
@@ -741,6 +760,20 @@ onMounted(load)
 
 .tree-node-name {
   font-size: 14px;
+}
+
+.tree-node--disabled .tree-node-name {
+  color: #909399;
+  text-decoration: line-through;
+}
+
+.field-hint {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .empty-tree,

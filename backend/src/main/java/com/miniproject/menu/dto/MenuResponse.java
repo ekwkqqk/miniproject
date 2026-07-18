@@ -13,6 +13,7 @@ public class MenuResponse {
     private final String nameI18nKey;
     private final String url;
     private final int sortOrder;
+    private final boolean enabled;
     private final boolean folder;
     private final List<RoleResponse> roles;
     private final List<MenuRoleButtonResponse> roleButtons;
@@ -20,6 +21,7 @@ public class MenuResponse {
     private final List<MenuResponse> children;
 
     public MenuResponse(Long id, Long parentId, String name, String nameI18nKey, String url, int sortOrder,
+                        boolean enabled,
                         boolean folder,
                         List<RoleResponse> roles,
                         List<MenuRoleButtonResponse> roleButtons,
@@ -31,6 +33,7 @@ public class MenuResponse {
         this.nameI18nKey = nameI18nKey;
         this.url = url;
         this.sortOrder = sortOrder;
+        this.enabled = enabled;
         this.folder = folder;
         this.roles = roles;
         this.roleButtons = roleButtons;
@@ -60,6 +63,10 @@ public class MenuResponse {
 
     public int getSortOrder() {
         return sortOrder;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 
     public boolean isFolder() {
