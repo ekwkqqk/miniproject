@@ -2,16 +2,18 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/store'
+import { useSettingsStore } from '@/features/settings/store'
 import { useI18n } from '@/features/i18n/useI18n'
 import { useBreakpoint } from '@/shared/composables/useBreakpoint'
 import AppSidebarNav from '@/shared/components/AppSidebarNav.vue'
-import { Expand, Fold, User } from '@element-plus/icons-vue'
+import { Expand, Fold, Moon, Sunny, User } from '@element-plus/icons-vue'
 
 const SIDEBAR_STORAGE_KEY = 'app.sidebarVisible'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 const { locale, locales, setLocale, tCode, switching } = useI18n()
 const { isCompact, isMobile, device } = useBreakpoint()
 
@@ -118,6 +120,18 @@ function toggleNav() {
         </div>
 
         <div class="header-right">
+          <el-button
+            class="theme-toggle"
+            text
+            :aria-label="settingsStore.isDark ? '라이트 모드' : '다크 모드'"
+            :title="settingsStore.isDark ? '라이트 모드' : '다크 모드'"
+            @click="settingsStore.toggleDarkMode()"
+          >
+            <el-icon :size="18">
+              <Sunny v-if="settingsStore.isDark" />
+              <Moon v-else />
+            </el-icon>
+          </el-button>
           <el-select
             :model-value="locale"
             size="small"
@@ -186,8 +200,8 @@ function toggleNav() {
   align-items: center;
   gap: 8px;
   padding: 0 12px;
-  border-bottom: 1px solid #ebeef5;
-  background: #fff;
+  border-bottom: 1px solid var(--app-border-color, #ebeef5);
+  background: var(--app-header-bg, #fff);
 }
 
 .header-left,
@@ -202,7 +216,8 @@ function toggleNav() {
   flex-shrink: 0;
 }
 
-.nav-toggle {
+.nav-toggle,
+.theme-toggle {
   padding: 4px;
 }
 
@@ -228,7 +243,7 @@ function toggleNav() {
 }
 
 .main {
-  background: #f5f7fa;
+  background: var(--app-page-bg, #f5f7fa);
   padding: var(--page-padding);
   min-width: 0;
 }

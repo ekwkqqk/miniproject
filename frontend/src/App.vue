@@ -35,7 +35,7 @@ body {
 }
 
 a {
-  color: #409eff;
+  color: var(--el-color-primary, #409eff);
   text-decoration: none;
 }
 

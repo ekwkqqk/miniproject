@@ -61,7 +61,7 @@ function goHome() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, #f0f4f8 0%, #e8eef5 100%);
+  background: var(--app-page-bg, #f0f4f8);
   padding: 24px;
 }
 
@@ -69,9 +69,10 @@ function goHome() {
   width: 100%;
   max-width: 440px;
   text-align: center;
-  background: #fff;
+  background: var(--app-surface-bg, #fff);
   border-radius: 12px;
   padding: 48px 32px;
+  border: 1px solid var(--app-border-color, transparent);
   box-shadow: 0 8px 24px rgba(31, 45, 61, 0.08);
 }
 
@@ -80,19 +81,19 @@ function goHome() {
   font-size: 72px;
   font-weight: 700;
   line-height: 1;
-  color: #1f2d3d;
+  color: var(--app-text-primary, #1f2d3d);
   letter-spacing: -2px;
 }
 
 h1 {
   margin: 16px 0 8px;
   font-size: 22px;
-  color: #303133;
+  color: var(--app-text-primary, #303133);
 }
 
 .message {
   margin: 0 0 28px;
-  color: #606266;
+  color: var(--app-text-secondary, #606266);
   line-height: 1.6;
 }
 

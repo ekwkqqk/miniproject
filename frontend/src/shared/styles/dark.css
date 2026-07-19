@@ -1,0 +1,114 @@
+/* App surface tokens (light defaults) */
+:root {
+  --app-page-bg: #f5f7fa;
+  --app-header-bg: #ffffff;
+  --app-surface-bg: #ffffff;
+  --app-border-color: #ebeef5;
+  --app-text-primary: #303133;
+  --app-text-secondary: #606266;
+  --app-text-muted: #909399;
+}
+
+html.dark {
+  color-scheme: dark;
+  --app-page-bg: var(--el-bg-color-page, #0a0a0a);
+  --app-header-bg: var(--el-bg-color, #141414);
+  --app-surface-bg: var(--el-bg-color, #141414);
+  --app-border-color: var(--el-border-color-lighter, #363637);
+  --app-text-primary: var(--el-text-color-primary, #e5eaf3);
+  --app-text-secondary: var(--el-text-color-regular, #cfd3dc);
+  --app-text-muted: var(--el-text-color-secondary, #a3a6ad);
+}
+
+html,
+body,
+#app {
+  background: var(--app-page-bg);
+  color: var(--app-text-primary);
+}
+
+/* Shared layout helpers that use hard-coded light colors */
+.mobile-card {
+  background: var(--app-surface-bg);
+  border-color: var(--app-border-color);
+}
+
+.mobile-card__meta dt,
+.meta-grid dt {
+  color: var(--app-text-muted);
+}
+
+.page-layout__subtitle,
+.page-layout__count,
+.content-panel__count {
+  color: var(--app-text-muted);
+}
+
+html.dark .el-dialog__footer {
+  background: var(--app-surface-bg);
+  border-top-color: var(--app-border-color);
+}
+
+html.dark .el-dialog::before {
+  background: var(--el-border-color, #4c4d4f);
+}
+
+/* Menu admin panels */
+html.dark .tree-panel,
+html.dark .detail-panel {
+  background: var(--app-surface-bg);
+  border-color: var(--app-border-color);
+}
+
+html.dark .tree-toolbar,
+html.dark .detail-toolbar {
+  border-bottom-color: var(--app-border-color);
+}
+
+html.dark .panel-title,
+html.dark .tree-node-name {
+  color: var(--app-text-primary);
+}
+
+html.dark .tree-hint,
+html.dark .empty-tree,
+html.dark .detail-empty,
+html.dark .field-hint {
+  color: var(--app-text-muted);
+}
+
+/* Auth pages */
+.auth-page {
+  background: var(--app-page-bg);
+}
+
+/* Role list / custom surfaces */
+html.dark .role-list-item {
+  background: var(--app-surface-bg);
+  border-color: var(--app-border-color);
+  color: var(--app-text-primary);
+}
+
+html.dark .role-list-item__code {
+  color: var(--app-text-muted);
+}
+
+/* Error page */
+html.dark .error-page {
+  background: var(--app-page-bg);
+}
+
+html.dark .error-card {
+  background: var(--app-surface-bg);
+  box-shadow: none;
+  border: 1px solid var(--app-border-color);
+}
+
+html.dark .error-card .code,
+html.dark .error-card h1 {
+  color: var(--app-text-primary);
+}
+
+html.dark .error-card .message {
+  color: var(--app-text-secondary);
+}

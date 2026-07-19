@@ -2,12 +2,15 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/store'
+import { useSettingsStore } from '@/features/settings/store'
 import { useI18n } from '@/features/i18n/useI18n'
+import { Moon, Sunny } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 const { tCode } = useI18n()
 const loading = ref(false)
 
@@ -58,6 +61,18 @@ async function handleLogin() {
 
 <template>
   <div class="auth-page">
+    <el-button
+      class="theme-toggle"
+      circle
+      :aria-label="settingsStore.isDark ? '라이트 모드' : '다크 모드'"
+      :title="settingsStore.isDark ? '라이트 모드' : '다크 모드'"
+      @click="settingsStore.toggleDarkMode()"
+    >
+      <el-icon :size="18">
+        <Sunny v-if="settingsStore.isDark" />
+        <Moon v-else />
+      </el-icon>
+    </el-button>
     <el-card class="auth-card">
       <h2>로그인</h2>
       <el-form label-position="top" @submit.prevent="handleLogin">
@@ -85,11 +100,18 @@ async function handleLogin() {
 
 <style scoped>
 .auth-page {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f7fa;
+  background: var(--app-page-bg, #f5f7fa);
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
 }
 
 .auth-card {

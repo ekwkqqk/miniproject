@@ -71,7 +71,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f7fa;
+  background: var(--app-page-bg, #f5f7fa);
 }
 
 .auth-card {
