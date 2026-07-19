@@ -69,6 +69,16 @@ async function onLocaleChange(code) {
   await setLocale(code)
 }
 
+function onUserCommand(command) {
+  if (command === 'change-password') {
+    router.push({ name: 'change-password' })
+    return
+  }
+  if (command === 'logout') {
+    handleLogout()
+  }
+}
+
 function toggleNav() {
   if (isCompact.value) {
     drawerOpen.value = !drawerOpen.value
@@ -116,7 +126,15 @@ function toggleNav() {
             </el-icon>
           </el-button>
           <span v-if="isCompact || !sidebarVisible" class="brand-inline">miniproject</span>
-          <el-tag size="small" type="info" effect="plain" class="device-badge">{{ deviceLabel }}</el-tag>
+          <el-tag
+            v-if="!isMobile"
+            size="small"
+            type="info"
+            effect="plain"
+            class="device-badge"
+          >
+            {{ deviceLabel }}
+          </el-tag>
         </div>
 
         <div class="header-right">
@@ -147,14 +165,41 @@ function toggleNav() {
               :value="item.code"
             />
           </el-select>
-          <el-icon class="user-icon"><User /></el-icon>
-          <span v-if="!isMobile" class="user-name">{{ authStore.user?.name || tCode('common', 'user') }}</span>
-          <el-button link @click="router.push({ name: 'change-password' })">
-            {{ tCode('common', 'changePassword') }}
-          </el-button>
-          <el-button type="danger" link @click="handleLogout">
-            {{ tCode('common', 'logout') }}
-          </el-button>
+
+          <template v-if="isMobile">
+            <el-dropdown trigger="click" @command="onUserCommand">
+              <el-button
+                class="user-menu-trigger"
+                text
+                :aria-label="authStore.user?.name || tCode('common', 'user')"
+              >
+                <el-icon :size="18"><User /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item disabled>
+                    {{ authStore.user?.name || tCode('common', 'user') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="change-password" divided>
+                    {{ tCode('common', 'changePassword') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="logout">
+                    {{ tCode('common', 'logout') }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+          <template v-else>
+            <el-icon class="user-icon"><User /></el-icon>
+            <span class="user-name">{{ authStore.user?.name || tCode('common', 'user') }}</span>
+            <el-button link @click="router.push({ name: 'change-password' })">
+              {{ tCode('common', 'changePassword') }}
+            </el-button>
+            <el-button type="danger" link @click="handleLogout">
+              {{ tCode('common', 'logout') }}
+            </el-button>
+          </template>
         </div>
       </el-header>
 
@@ -202,6 +247,7 @@ function toggleNav() {
   padding: 0 12px;
   border-bottom: 1px solid var(--app-border-color, #ebeef5);
   background: var(--app-header-bg, #fff);
+  overflow: hidden;
 }
 
 .header-left,
@@ -212,19 +258,29 @@ function toggleNav() {
   min-width: 0;
 }
 
+.header-left {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
 .header-right {
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 .nav-toggle,
-.theme-toggle {
+.theme-toggle,
+.user-menu-trigger {
   padding: 4px;
+  flex-shrink: 0;
 }
 
 .brand-inline {
   font-weight: 700;
   font-size: 15px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .device-badge {
@@ -233,6 +289,7 @@ function toggleNav() {
 
 .locale-select {
   width: 110px;
+  flex-shrink: 0;
 }
 
 .user-name {
@@ -250,15 +307,20 @@ function toggleNav() {
 
 @media (max-width: 767px) {
   .locale-select {
-    width: 88px;
+    width: 72px;
   }
 
   .header {
     padding: 0 8px;
+    gap: 4px;
+  }
+
+  .header-left,
+  .header-right {
+    gap: 4px;
   }
 }
 </style>
-
 <style>
 /* Drawer body flush with dark nav */
 .nav-drawer.el-drawer {

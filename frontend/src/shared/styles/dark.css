@@ -20,6 +20,18 @@ html.dark {
   --app-text-muted: var(--el-text-color-secondary, #a3a6ad);
 }
 
+/*
+ * 다크/라이트 토글 시 요소별 transition이 시차를 만듦.
+ * store에서 전환 동안 이 클래스를 붙여 한 번에 반영한다.
+ */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
 html,
 body,
 #app {
@@ -49,8 +61,14 @@ html.dark .el-dialog__footer {
   border-top-color: var(--app-border-color);
 }
 
-html.dark .el-dialog::before {
+/* themed 팝업은 자체 헤더 핸들을 쓰므로 다크 핸들 띠를 그리지 않음 */
+html.dark .el-dialog:not(.responsive-dialog--themed-header)::before {
   background: var(--el-border-color, #4c4d4f);
+}
+
+html.dark .el-dialog.responsive-dialog--themed-header::before {
+  display: none !important;
+  background: transparent !important;
 }
 
 /* Menu admin panels */

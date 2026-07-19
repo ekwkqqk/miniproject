@@ -85,6 +85,20 @@ function applyThemeColor(color, isDark = false) {
   localStorage.setItem(THEME_KEY, primary)
 }
 
+/** 테마 전환 중 CSS transition을 잠시 끄고, 다음 페인트 후 복구 */
+function withInstantThemePaint(apply) {
+  const root = document.documentElement
+  root.classList.add('theme-switching')
+  apply()
+  // 레이아웃을 강제로 한 번 반영한 뒤, 두 프레임 후 transition 복구
+  void root.offsetHeight
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      root.classList.remove('theme-switching')
+    })
+  })
+}
+
 export const useSettingsStore = defineStore('settings', () => {
   const themePrimaryColor = ref(localStorage.getItem(THEME_KEY) || '#409EFF')
   const darkMode = ref(readStoredDarkMode())
@@ -92,15 +106,25 @@ export const useSettingsStore = defineStore('settings', () => {
   const loaded = ref(false)
   const isDark = computed(() => darkMode.value)
 
-  function applyDarkMode(enabled = darkMode.value) {
-    darkMode.value = !!enabled
-    document.documentElement.classList.toggle('dark', darkMode.value)
-    try {
-      localStorage.setItem(DARK_KEY, String(darkMode.value))
-    } catch {
-      // ignore
+  function applyDarkMode(enabled = darkMode.value, { animate = true } = {}) {
+    const next = !!enabled
+    const run = () => {
+      // DOM/CSS를 Vue 상태보다 먼저 한꺼번에 적용 → 중간 페인트 방지
+      document.documentElement.classList.toggle('dark', next)
+      applyThemeColor(themePrimaryColor.value, next)
+      darkMode.value = next
+      try {
+        localStorage.setItem(DARK_KEY, String(next))
+      } catch {
+        // ignore
+      }
     }
-    applyThemeColor(themePrimaryColor.value, darkMode.value)
+
+    if (animate && typeof document !== 'undefined') {
+      withInstantThemePaint(run)
+    } else {
+      run()
+    }
   }
 
   function toggleDarkMode() {
@@ -108,7 +132,8 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   function applyLocalTheme() {
-    applyDarkMode(darkMode.value)
+    // 초기 로드는 transition 억제만 하고 animate 플래그는 끔 (불필요한 rAF 대기 없음)
+    applyDarkMode(darkMode.value, { animate: false })
   }
 
   async function loadPublicSettings(force = false) {
@@ -119,7 +144,9 @@ export const useSettingsStore = defineStore('settings', () => {
       if (data.success && data.data) {
         themePrimaryColor.value = data.data.themePrimaryColor
         passwordMinLength.value = data.data.passwordMinLength
-        applyThemeColor(themePrimaryColor.value, darkMode.value)
+        withInstantThemePaint(() => {
+          applyThemeColor(themePrimaryColor.value, darkMode.value)
+        })
         loaded.value = true
       }
     } catch {
@@ -129,7 +156,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function setThemeFromAdmin(color) {
     themePrimaryColor.value = color
-    applyThemeColor(color, darkMode.value)
+    withInstantThemePaint(() => {
+      applyThemeColor(color, darkMode.value)
+    })
   }
 
   return {

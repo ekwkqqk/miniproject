@@ -271,8 +271,8 @@
 
   .el-dialog__footer {
     padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid #ebeef5;
-    background: #fff;
+    border-top: 1px solid var(--app-border-color, #ebeef5);
+    background: var(--app-surface-bg, #fff);
     flex-shrink: 0;
   }
 

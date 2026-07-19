@@ -149,20 +149,30 @@ const dialogClass = computed(() => [
 
 @media (max-width: 767px) {
   /*
-   * 전역 sheet 핸들(::before)은 헤더 밖에 그려져 X/제목과 겹침.
-   * themed sheet에서는 끄고, 핸들을 헤더 안으로 옮긴다.
+   * 모바일 sheet 핸들(::before) + 다크모드 배경이 테마 헤더 위에 어두운 띠로 겹침.
+   * 외부 핸들을 제거하고 헤더가 상단(둥근 모서리 포함)을 담당한다.
    */
-  .el-dialog.responsive-dialog--themed-header.responsive-dialog--sheet::before {
+  .el-dialog.responsive-dialog--themed-header::before,
+  .el-dialog.responsive-dialog--themed-header.responsive-dialog--sheet::before,
+  html.dark .el-dialog.responsive-dialog--themed-header::before {
     display: none !important;
+    content: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
   }
 
-  .el-dialog.responsive-dialog--themed-header.responsive-dialog--sheet .el-dialog__header {
+  .el-dialog.responsive-dialog--themed-header .el-dialog__header {
     position: relative;
+    flex-shrink: 0;
     padding: 22px 16px 12px;
     background: var(--el-color-primary);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
   }
 
-  .el-dialog.responsive-dialog--themed-header.responsive-dialog--sheet .el-dialog__header::before {
+  .el-dialog.responsive-dialog--themed-header .el-dialog__header::before {
     content: '';
     position: absolute;
     top: 10px;
@@ -173,9 +183,10 @@ const dialogClass = computed(() => [
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.55);
     pointer-events: none;
+    z-index: 1;
   }
 
-  .el-dialog.responsive-dialog--themed-header.responsive-dialog--sheet .el-dialog__body {
+  .el-dialog.responsive-dialog--themed-header .el-dialog__body {
     padding-top: 12px;
   }
 }
