@@ -1,12 +1,13 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useBreakpoint } from '@/shared/composables/useBreakpoint'
 import { useI18n } from '@/features/i18n/useI18n'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
 import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
-import { DEMO_ITEMS, formatPrice, statusMeta } from '@/features/demo/data'
+import * as demoApi from '@/features/demo/api'
+import { formatPrice, statusMeta } from '@/features/demo/data'
 
 const { device, isMobile } = useBreakpoint()
 const { tCode } = useI18n()
@@ -15,13 +16,32 @@ const basicOpen = ref(false)
 const formOpen = ref(false)
 const detailOpen = ref(false)
 const nestedOpen = ref(false)
+const items = ref([])
+const loading = ref(false)
 
 const form = reactive({
   title: '',
   memo: '',
 })
 
-const selected = ref(DEMO_ITEMS[0])
+const selected = ref(null)
+
+async function loadItems() {
+  loading.value = true
+  try {
+    const { data } = await demoApi.getDemoItems({ page: 1, size: 4 })
+    if (data.success) {
+      items.value = data.data.items || []
+      if (!selected.value && items.value.length) {
+        selected.value = items.value[0]
+      }
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || error.message)
+  } finally {
+    loading.value = false
+  }
+}
 
 function openBasic() {
   basicOpen.value = true
@@ -37,6 +57,8 @@ function openDetail(row) {
   selected.value = row
   detailOpen.value = true
 }
+
+onMounted(loadItems)
 
 async function openConfirm() {
   try {
@@ -75,16 +97,16 @@ function submitForm() {
         <el-button type="primary" @click="openBasic">기본 Dialog</el-button>
         <el-button type="success" @click="openForm">폼 Dialog</el-button>
         <el-button type="warning" @click="openConfirm">Confirm MessageBox</el-button>
-        <el-button @click="openDetail(DEMO_ITEMS[1])">상세 Dialog</el-button>
+        <el-button :disabled="items.length < 2" @click="openDetail(items[1])">상세 Dialog</el-button>
       </div>
       <p class="hint">
         창 너비를 줄이거나 개발자 도구 디바이스 모드로 Mobile / Tablet / Desktop을 전환해 보세요.
       </p>
     </ContentPanel>
 
-    <ContentPanel title="목록에서 Dialog 열기">
+    <ContentPanel title="목록에서 Dialog 열기" :loading="loading">
       <div class="table-scroll">
-        <el-table :data="DEMO_ITEMS.slice(0, 4)" stripe border>
+        <el-table :data="items" stripe border>
           <el-table-column prop="id" :label="tCode('table', 'id')" width="90" />
           <el-table-column prop="name" :label="tCode('table', 'productName')" min-width="140" />
           <el-table-column :label="tCode('table', 'status')" width="100">

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.demo.domain.DemoItemRepository">
+
+    <resultMap id="DemoItemResultMap" type="com.miniproject.demo.domain.DemoItem">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="category" column="category"/>
+        <result property="status" column="status"/>
+        <result property="price" column="price"/>
+        <result property="stock" column="stock"/>
+        <result property="owner" column="owner"/>
+        <result property="description" column="description"/>
+        <result property="featured" column="featured"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="searchWhere">
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    name ILIKE CONCAT('%', #{keyword}, '%')
+                    OR owner ILIKE CONCAT('%', #{keyword}, '%')
+                    OR CAST(id AS VARCHAR) LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="dateFrom != null">
+                AND updated_at &gt;= #{dateFrom}
+            </if>
+            <if test="dateTo != null">
+                AND updated_at &lt;= #{dateTo}
+            </if>
+            <if test="featured != null">
+                AND featured = #{featured}
+            </if>
+            <if test="inStock != null and inStock == true">
+                AND stock &gt; 0
+            </if>
+            <if test="inStock != null and inStock == false">
+                AND stock = 0
+            </if>
+        </where>
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_demo_items (
+            name, category, status, price, stock, owner, description,
+            featured, updated_at, created_at
+        ) VALUES (
+            #{name}, #{category}, #{status}, #{price}, #{stock}, #{owner}, #{description},
+            #{featured}, #{updatedAt}, #{createdAt}
+        )
+    </insert>
+
+    <select id="findById" resultMap="DemoItemResultMap">
+        SELECT id, name, category, status, price, stock, owner, description,
+               featured, updated_at, created_at
+        FROM pjt_demo_items
+        WHERE id = #{id}
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM pjt_demo_items
+    </select>
+
+    <select id="findPage" resultMap="DemoItemResultMap">
+        SELECT id, name, category, status, price, stock, owner, description,
+               featured, updated_at, created_at
+        FROM pjt_demo_items
+        <include refid="searchWhere"/>
+        ORDER BY updated_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*)
+        FROM pjt_demo_items
+        <include refid="searchWhere"/>
+    </select>
+
+</mapper>

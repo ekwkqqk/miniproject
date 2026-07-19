@@ -1,6 +1,5 @@
 package com.miniproject.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.miniproject.common.ApiResponse;
 import com.miniproject.common.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,16 +11,17 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 
 @Component
 public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
 
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
-    public SecurityErrorHandler(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public SecurityErrorHandler(JsonMapper jsonMapper) {
+        this.jsonMapper = jsonMapper;
     }
 
     @Override
@@ -45,6 +45,6 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        objectMapper.writeValue(response.getWriter(), ApiResponse.error(message, errorCode.getCode()));
+        jsonMapper.writeValue(response.getWriter(), ApiResponse.error(message, errorCode.getCode()));
     }
 }

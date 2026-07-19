@@ -12,5 +12,6 @@
     <include file="db/changelog/changes/005-create-files.xml"/>
     <include file="db/changelog/changes/006-add-file-group-id.xml"/>
     <include file="db/changelog/changes/007-add-menu-enabled.xml"/>
+    <include file="db/changelog/changes/008-create-demo-items.xml"/>
 
 </databaseChangeLog>

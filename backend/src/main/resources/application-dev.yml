@@ -38,6 +38,7 @@ logging:
     com.miniproject.settings.domain: DEBUG
     com.miniproject.mail.domain: DEBUG
     com.miniproject.file.domain: DEBUG
+    com.miniproject.demo.domain: DEBUG
 
 springdoc:
   api-docs:

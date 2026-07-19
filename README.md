@@ -1,6 +1,6 @@
 # miniproject
 
-Vue 3 + Spring Boot 3 기반 풀스택 스타터 프레임워크입니다.  
+Vue 3 + Spring Boot 4 기반 풀스택 스타터 프레임워크입니다.  
 인증·권한·메뉴·다국어·메일·파일·테마(다크 모드) 등 관리형 웹앱에 바로 쓸 수 있는 공통 기능을 포함합니다.
 
 ## 기술 스택
@@ -8,7 +8,7 @@ Vue 3 + Spring Boot 3 기반 풀스택 스타터 프레임워크입니다.
 | 구분 | 기술 |
 |------|------|
 | Frontend | Vue 3, Vite, Pinia, Vue Router, Element Plus, Axios |
-| Backend | Spring Boot 3.3, Spring Security, JWT, MyBatis, Liquibase, springdoc-openapi |
+| Backend | Spring Boot 4.1, Spring Security, JWT, MyBatis, Liquibase, springdoc-openapi, Jackson 3 |
 | DB | PostgreSQL |
 | Java / Node | Java 17, Node `^22.18` 또는 `>=24.12` |
 
@@ -21,7 +21,7 @@ miniproject/
 │       ├── features/         # 도메인별 기능 (auth, admin, menu, i18n, …)
 │       ├── shared/           # 레이아웃, 공통 스타일, 유틸
 │       └── router/           # 라우터·가드
-└── backend/                  # Spring Boot 3 + MyBatis + Liquibase + Maven
+└── backend/                  # Spring Boot 4 + MyBatis + Liquibase + Maven
     └── src/main/
         ├── java/com/miniproject/
         └── resources/

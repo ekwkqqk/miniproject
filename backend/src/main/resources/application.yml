@@ -3,7 +3,8 @@ spring:
     active: dev
   liquibase:
     enabled: ${LIQUIBASE_ENABLED:true}
-    change-log: classpath:db/changelog/db.changelog-master.xml
+    # Boot 4 / Liquibase 5: classpath 루트는 '/' 포함 형식 사용
+    change-log: classpath:/db/changelog/db.changelog-master.xml
   servlet:
     multipart:
       max-file-size: ${FILE_MAX_SIZE:20MB}

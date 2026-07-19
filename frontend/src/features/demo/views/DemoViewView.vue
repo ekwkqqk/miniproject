@@ -1,20 +1,40 @@
 <script setup>
-import { computed } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { Back, EditPen } from '@element-plus/icons-vue'
 import { useBreakpoint } from '@/shared/composables/useBreakpoint'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
-import { DEMO_ITEMS, findDemoItem, formatPrice, statusMeta } from '@/features/demo/data'
-import { Back, EditPen } from '@element-plus/icons-vue'
+import * as demoApi from '@/features/demo/api'
+import { formatPrice, statusMeta } from '@/features/demo/data'
 
 const route = useRoute()
 const router = useRouter()
 const { device } = useBreakpoint()
 
-const item = computed(() => {
-  if (route.params.id) return findDemoItem(route.params.id)
-  return DEMO_ITEMS[0]
-})
+const loading = ref(false)
+const item = ref(null)
+
+async function load() {
+  loading.value = true
+  item.value = null
+  try {
+    if (route.params.id) {
+      const { data } = await demoApi.getDemoItem(route.params.id)
+      if (data.success) item.value = data.data
+      return
+    }
+    const { data } = await demoApi.getDemoItems({ page: 1, size: 1 })
+    if (data.success && data.data.items?.length) {
+      item.value = data.data.items[0]
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || error.message)
+  } finally {
+    loading.value = false
+  }
+}
 
 function goBack() {
   router.push({ name: 'demo-search' })
@@ -24,6 +44,9 @@ function goEdit() {
   if (!item.value) return
   router.push({ name: 'demo-edit', params: { id: String(item.value.id) } })
 }
+
+watch(() => route.params.id, load)
+onMounted(load)
 </script>
 
 <template>
@@ -33,7 +56,7 @@ function goEdit() {
       <el-button type="primary" :icon="EditPen" :disabled="!item" @click="goEdit">수정</el-button>
     </template>
 
-    <ContentPanel v-if="item" :title="item.name">
+    <ContentPanel v-if="item" :title="item.name" :loading="loading">
       <template #header-actions>
         <el-tag :type="statusMeta(item.status).type">{{ statusMeta(item.status).label }}</el-tag>
       </template>
@@ -60,6 +83,10 @@ function goEdit() {
           <div class="value">{{ item.owner }}</div>
         </div>
         <div class="field">
+          <div class="label">추천</div>
+          <div class="value">{{ item.featured ? 'Y' : 'N' }}</div>
+        </div>
+        <div class="field">
           <div class="label">최종 수정일</div>
           <div class="value">{{ item.updatedAt }}</div>
         </div>
@@ -70,8 +97,8 @@ function goEdit() {
       </div>
     </ContentPanel>
 
-    <ContentPanel v-else :show-header="false">
-      <el-empty description="대상을 찾을 수 없습니다.">
+    <ContentPanel v-else :show-header="false" :loading="loading">
+      <el-empty v-if="!loading" description="대상을 찾을 수 없습니다.">
         <el-button type="primary" @click="goBack">검색으로 이동</el-button>
       </el-empty>
     </ContentPanel>
@@ -81,21 +108,21 @@ function goEdit() {
 <style scoped>
 .field .label {
   font-size: 12px;
-  color: #909399;
+  color: var(--app-text-muted, #909399);
   margin-bottom: 4px;
 }
 
 .field .value {
   font-size: 15px;
-  color: #303133;
+  color: var(--app-text-primary, #303133);
   word-break: break-word;
 }
 
 .field .desc {
   line-height: 1.6;
   padding: 10px 12px;
-  background: #fafafa;
+  background: var(--app-surface-bg, #fafafa);
   border-radius: 6px;
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--app-border-color, #ebeef5);
 }
 </style>

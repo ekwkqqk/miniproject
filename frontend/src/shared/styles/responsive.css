@@ -74,8 +74,8 @@
 .filter-panel {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  align-items: end;
+  gap: 16px 12px;
+  align-items: start;
 }
 
 @media (max-width: 1023px) {
@@ -87,29 +87,6 @@
 @media (max-width: 767px) {
   .filter-panel {
     grid-template-columns: 1fr;
-  }
-}
-
-.filter-panel__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-@media (min-width: 768px) {
-  .filter-panel__actions {
-    justify-content: flex-end;
-  }
-}
-
-@media (max-width: 767px) {
-  .filter-panel__actions {
-    width: 100%;
-  }
-
-  .filter-panel__actions .el-button {
-    flex: 1;
   }
 }
 
