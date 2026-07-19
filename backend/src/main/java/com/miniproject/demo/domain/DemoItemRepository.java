@@ -37,4 +37,15 @@ public interface DemoItemRepository {
             @Param("featured") Boolean featured,
             @Param("inStock") Boolean inStock
     );
+
+    List<DemoItem> findForExport(
+            @Param("keyword") String keyword,
+            @Param("category") String category,
+            @Param("status") String status,
+            @Param("dateFrom") LocalDate dateFrom,
+            @Param("dateTo") LocalDate dateTo,
+            @Param("featured") Boolean featured,
+            @Param("inStock") Boolean inStock,
+            @Param("limit") int limit
+    );
 }

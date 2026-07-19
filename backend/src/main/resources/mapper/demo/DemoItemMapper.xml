@@ -86,4 +86,13 @@
         <include refid="searchWhere"/>
     </select>
 
+    <select id="findForExport" resultMap="DemoItemResultMap">
+        SELECT id, name, category, status, price, stock, owner, description,
+               featured, updated_at, created_at
+        FROM pjt_demo_items
+        <include refid="searchWhere"/>
+        ORDER BY updated_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

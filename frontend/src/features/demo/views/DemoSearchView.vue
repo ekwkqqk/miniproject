@@ -1,8 +1,10 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { View, EditPen } from '@element-plus/icons-vue'
+import { View, EditPen, Download } from '@element-plus/icons-vue'
 import { useBreakpoint } from '@/shared/composables/useBreakpoint'
+import { useExcelDownload } from '@/shared/composables/useExcelDownload'
+import { useMenuAuth } from '@/features/menu/useMenuAuth'
 import { useI18n } from '@/features/i18n/useI18n'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import SearchPanel from '@/shared/components/SearchPanel.vue'
@@ -13,7 +15,9 @@ import * as demoApi from '@/features/demo/api'
 import { CATEGORIES, STATUSES, formatPrice, statusMeta } from '@/features/demo/data'
 
 const { isMobile, device } = useBreakpoint()
+const { canDownload } = useMenuAuth()
 const { tCode } = useI18n()
+const { exporting, download: downloadExcel } = useExcelDownload()
 
 const filters = reactive({
   keyword: '',
@@ -47,11 +51,8 @@ const editForm = reactive({
   featured: false,
 })
 
-function buildParams() {
-  const params = {
-    page: page.value,
-    size: size.value,
-  }
+function buildFilterParams() {
+  const params = {}
   if (filters.keyword?.trim()) params.keyword = filters.keyword.trim()
   if (filters.category) params.category = filters.category
   if (filters.status) params.status = filters.status
@@ -60,6 +61,26 @@ function buildParams() {
   if (filters.featuredOnly) params.featured = true
   if (filters.inStockOnly) params.inStock = true
   return params
+}
+
+function buildParams() {
+  return {
+    ...buildFilterParams(),
+    page: page.value,
+    size: size.value,
+  }
+}
+
+async function handleExcelDownload() {
+  try {
+    await downloadExcel({
+      url: '/demo/items/export',
+      params: buildFilterParams(),
+      fallbackFilename: 'demo-items.xlsx',
+    })
+  } catch {
+    // 메시지는 useExcelDownload에서 처리
+  }
 }
 
 async function load() {
@@ -233,6 +254,18 @@ onMounted(load)
     </SearchPanel>
 
     <ContentPanel title="검색 결과" :count="total" :loading="loading">
+      <template v-if="canDownload" #header-actions>
+        <el-button
+          type="success"
+          plain
+          :icon="Download"
+          :loading="exporting"
+          @click="handleExcelDownload"
+        >
+          엑셀 다운로드
+        </el-button>
+      </template>
+
       <div v-if="isMobile" class="mobile-list">
         <article v-for="row in rows" :key="row.id" class="mobile-card">
           <div class="mobile-card__head">

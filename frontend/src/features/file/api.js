@@ -1,4 +1,5 @@
 import client, { getErrorMessage } from '@/shared/api/client'
+import { filenameFromContentDisposition, saveBlob } from '@/shared/utils/download'
 
 /**
  * multipart 업로드 — 동일 요청 파일들은 같은 fileGroupId로 묶임
@@ -43,13 +44,12 @@ export function downloadUrl(id) {
 }
 
 export async function downloadFile(id, filename) {
-  const { data } = await client.get(`/files/${id}/download`, {
+  const { data, headers } = await client.get(`/files/${id}/download`, {
     responseType: 'blob',
   })
-  const url = URL.createObjectURL(data)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename || `file-${id}`
-  a.click()
-  URL.revokeObjectURL(url)
+  const resolvedName = filenameFromContentDisposition(
+    headers,
+    filename || `file-${id}`,
+  )
+  saveBlob(data, resolvedName)
 }
