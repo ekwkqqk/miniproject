@@ -30,6 +30,13 @@ springdoc:
   swagger-ui:
     enabled: false
 
+# 메트릭 엔드포인트는 네트워크 격리(사설망/방화벽) 전제를 권장합니다.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
 app:
   mail:
     enabled: ${MAIL_ENABLED:true}

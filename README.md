@@ -8,8 +8,9 @@ Vue 3 + Spring Boot 4 기반 풀스택 스타터 프레임워크입니다.
 | 구분 | 기술 |
 |------|------|
 | Frontend | Vue 3, Vite, Pinia, Vue Router, Element Plus, Axios |
-| Backend | Spring Boot 4.1, Spring Security, JWT, MyBatis, Liquibase, springdoc-openapi, Jackson 3 |
+| Backend | Spring Boot 4.1, Spring Security, JWT, MyBatis, Liquibase, springdoc-openapi, Jackson 3, Actuator/Micrometer |
 | DB | PostgreSQL |
+| Monitoring | Prometheus + Grafana (`monitoring/`) |
 | Java / Node | Java 17, Node `^22.18` 또는 `>=24.12` |
 
 ## 프로젝트 구조
@@ -21,12 +22,13 @@ miniproject/
 │       ├── features/         # 도메인별 기능 (auth, admin, menu, i18n, …)
 │       ├── shared/           # 레이아웃, 공통 스타일, 유틸
 │       └── router/           # 라우터·가드
-└── backend/                  # Spring Boot 4 + MyBatis + Liquibase + Maven
-    └── src/main/
-        ├── java/com/miniproject/
-        └── resources/
-            ├── db/changelog/ # Liquibase 마이그레이션
-            └── mapper/       # MyBatis XML
+├── backend/                  # Spring Boot 4 + MyBatis + Liquibase + Maven
+│   └── src/main/
+│       ├── java/com/miniproject/
+│       └── resources/
+│           ├── db/changelog/ # Liquibase 마이그레이션
+│           └── mapper/       # MyBatis XML
+└── monitoring/               # Prometheus + Grafana
 ```
 
 ## 주요 기능
@@ -39,7 +41,8 @@ miniproject/
 - **설정·테마**: 공개/관리 설정, primary 색상, **다크 모드**(localStorage 유지)
 - **메일**: 템플릿 관리, 발송 API (`MAIL_ENABLED`로 활성화)
 - **파일**: 업로드/다운로드/삭제, file group
-- **데모 화면**: 검색·조회·편집·업로드·팝업 등 UI 샘플
+- **데모 화면**: 검색·조회·편집·업로드·팝업·엑셀 다운로드 등 UI 샘플
+- **모니터링**: Actuator `/actuator/prometheus` + Prometheus/Grafana (`monitoring/`)
 
 ## 사전 준비
 
@@ -169,6 +172,19 @@ Access JWT 만료: 15분(`900000` ms), Refresh: 7일(`604800000` ms) — `applic
 - 다크 모드: 헤더(또는 로그인 화면) 토글, `localStorage` 키 `app.darkMode`.
 - 테마 primary 색: 설정/로컬 저장 후 Element Plus·사이드바 CSS 변수에 반영됩니다.
 - 개발 프로필에서 MyBatis SQL은 mapper 패키지 `DEBUG` 로그로 출력됩니다.
+
+## 모니터링 (Prometheus + Grafana)
+
+백엔드 Actuator가 `/actuator/prometheus` 메트릭을 노출합니다.  
+자세한 실행 방법은 [`monitoring/README.md`](monitoring/README.md)를 참고하세요.
+
+```bash
+# 백엔드 기동 후
+docker compose -f monitoring/docker-compose.yml up -d
+```
+
+- Prometheus: http://localhost:9090  
+- Grafana: http://localhost:3000 (`admin` / `admin`)
 
 ## 라이선스
 

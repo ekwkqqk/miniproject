@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: miniproject
   profiles:
     active: dev
   liquibase:
@@ -9,6 +11,23 @@ spring:
     multipart:
       max-file-size: ${FILE_MAX_SIZE:20MB}
       max-request-size: ${FILE_MAX_REQUEST_SIZE:50MB}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 app:
   jwt:

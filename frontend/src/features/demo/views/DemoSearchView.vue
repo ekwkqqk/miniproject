@@ -33,6 +33,9 @@ const rows = ref([])
 const total = ref(0)
 const page = ref(1)
 const size = ref(10)
+const sort = ref('updatedAt')
+const order = ref('desc')
+const tableKey = ref(0)
 
 const viewOpen = ref(false)
 const editOpen = ref(false)
@@ -60,6 +63,8 @@ function buildFilterParams() {
   if (filters.dateRange?.[1]) params.dateTo = filters.dateRange[1]
   if (filters.featuredOnly) params.featured = true
   if (filters.inStockOnly) params.inStock = true
+  if (sort.value) params.sort = sort.value
+  if (order.value) params.order = order.value
   return params
 }
 
@@ -111,12 +116,31 @@ function handleReset() {
   filters.dateRange = null
   filters.featuredOnly = false
   filters.inStockOnly = false
+  sort.value = 'updatedAt'
+  order.value = 'desc'
+  tableKey.value += 1
   page.value = 1
   load()
 }
 
 function handlePageChange(next) {
   page.value = next
+  load()
+}
+
+function handleSortChange({ prop, order: sortOrder }) {
+  let nextSort = 'updatedAt'
+  let nextOrder = 'desc'
+  if (prop && sortOrder) {
+    nextSort = prop
+    nextOrder = sortOrder === 'ascending' ? 'asc' : 'desc'
+  }
+  if (sort.value === nextSort && order.value === nextOrder) {
+    return
+  }
+  sort.value = nextSort
+  order.value = nextOrder
+  page.value = 1
   load()
 }
 
@@ -292,29 +316,37 @@ onMounted(load)
       </div>
 
       <div v-else class="table-scroll">
-        <el-table :data="rows" stripe border style="width: 100%">
-          <el-table-column prop="id" :label="tCode('table', 'id')" width="80" />
-          <el-table-column prop="name" :label="tCode('table', 'productName')" min-width="150" />
-          <el-table-column prop="category" :label="tCode('table', 'category')" width="100" />
-          <el-table-column :label="tCode('table', 'status')" width="100">
+        <el-table
+          :key="tableKey"
+          :data="rows"
+          stripe
+          border
+          style="width: 100%"
+          :default-sort="{ prop: 'updatedAt', order: 'descending' }"
+          @sort-change="handleSortChange"
+        >
+          <el-table-column prop="id" :label="tCode('table', 'id')" width="90" sortable="custom" />
+          <el-table-column prop="name" :label="tCode('table', 'productName')" min-width="160" sortable="custom" />
+          <el-table-column prop="category" :label="tCode('table', 'category')" width="120" sortable="custom" />
+          <el-table-column prop="status" :label="tCode('table', 'status')" width="110" sortable="custom">
             <template #default="{ row }">
               <el-tag size="small" :type="statusMeta(row.status).type">
                 {{ statusMeta(row.status).label }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="tCode('table', 'price')" width="120" align="right">
+          <el-table-column prop="price" :label="tCode('table', 'price')" width="130" align="right" sortable="custom">
             <template #default="{ row }">{{ formatPrice(row.price) }}</template>
           </el-table-column>
-          <el-table-column prop="stock" :label="tCode('table', 'stock')" width="80" align="right" />
-          <el-table-column label="추천" width="70" align="center">
+          <el-table-column prop="stock" :label="tCode('table', 'stock')" width="100" align="right" sortable="custom" />
+          <el-table-column prop="featured" label="추천" width="100" align="center" sortable="custom">
             <template #default="{ row }">
               <el-tag v-if="row.featured" size="small" type="warning">Y</el-tag>
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column prop="owner" :label="tCode('table', 'owner')" width="90" />
-          <el-table-column :label="tCode('table', 'updatedAt')" width="120">
+          <el-table-column prop="owner" :label="tCode('table', 'owner')" width="110" sortable="custom" />
+          <el-table-column prop="updatedAt" :label="tCode('table', 'updatedAt')" width="140" sortable="custom">
             <template #default="{ row }">{{ formatUpdatedAt(row.updatedAt) }}</template>
           </el-table-column>
           <el-table-column :label="tCode('table', 'actions')" width="140" fixed="right">
@@ -470,6 +502,18 @@ onMounted(load)
   gap: 8px 20px;
   min-height: 32px;
   width: 100%;
+}
+
+.table-scroll :deep(.el-table .cell) {
+  white-space: nowrap;
+}
+
+.table-scroll :deep(.el-table th.el-table__cell > .cell) {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .dialog-status {

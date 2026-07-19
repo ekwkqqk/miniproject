@@ -75,6 +75,7 @@ public class MenuAccessLogInterceptor implements HandlerInterceptor {
                 || uri.equals("/api/settings/public")
                 || uri.equals("/api/menus/my")
                 || uri.startsWith("/api/admin/menu-access-logs")
+                || uri.startsWith("/actuator/")
                 || uri.startsWith("/swagger")
                 || uri.startsWith("/v3/api-docs");
     }

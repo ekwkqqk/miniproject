@@ -76,7 +76,7 @@
                featured, updated_at, created_at
         FROM pjt_demo_items
         <include refid="searchWhere"/>
-        ORDER BY updated_at DESC, id DESC
+        ORDER BY ${sortColumn} ${sortDir}, id DESC
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
@@ -91,7 +91,7 @@
                featured, updated_at, created_at
         FROM pjt_demo_items
         <include refid="searchWhere"/>
-        ORDER BY updated_at DESC, id DESC
+        ORDER BY ${sortColumn} ${sortDir}, id DESC
         LIMIT #{limit}
     </select>
 

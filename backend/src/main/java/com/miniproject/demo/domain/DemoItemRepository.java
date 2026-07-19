@@ -24,6 +24,8 @@ public interface DemoItemRepository {
             @Param("dateTo") LocalDate dateTo,
             @Param("featured") Boolean featured,
             @Param("inStock") Boolean inStock,
+            @Param("sortColumn") String sortColumn,
+            @Param("sortDir") String sortDir,
             @Param("limit") int limit,
             @Param("offset") int offset
     );
@@ -46,6 +48,8 @@ public interface DemoItemRepository {
             @Param("dateTo") LocalDate dateTo,
             @Param("featured") Boolean featured,
             @Param("inStock") Boolean inStock,
+            @Param("sortColumn") String sortColumn,
+            @Param("sortDir") String sortDir,
             @Param("limit") int limit
     );
 }

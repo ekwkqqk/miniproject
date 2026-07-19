@@ -34,11 +34,13 @@ public class DemoItemController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) Boolean featured,
             @RequestParam(required = false) Boolean inStock,
+            @RequestParam(defaultValue = "updatedAt") String sort,
+            @RequestParam(defaultValue = "desc") String order,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         return ApiResponse.success(demoItemService.search(
-                keyword, category, status, dateFrom, dateTo, featured, inStock, page, size
+                keyword, category, status, dateFrom, dateTo, featured, inStock, sort, order, page, size
         ));
     }
 
@@ -50,10 +52,12 @@ public class DemoItemController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) Boolean featured,
-            @RequestParam(required = false) Boolean inStock
+            @RequestParam(required = false) Boolean inStock,
+            @RequestParam(defaultValue = "updatedAt") String sort,
+            @RequestParam(defaultValue = "desc") String order
     ) {
         byte[] body = demoItemService.exportExcel(
-                keyword, category, status, dateFrom, dateTo, featured, inStock
+                keyword, category, status, dateFrom, dateTo, featured, inStock, sort, order
         );
         return ExcelResponses.xlsx(body, "demo-items");
     }

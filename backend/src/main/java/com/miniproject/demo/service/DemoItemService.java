@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -21,6 +22,19 @@ public class DemoItemService {
     private static final List<String> EXPORT_HEADERS = List.of(
             "ID", "상품명", "카테고리", "상태", "가격", "재고", "담당자", "추천", "수정일", "설명"
     );
+    private static final Map<String, String> SORT_COLUMNS = Map.of(
+            "id", "id",
+            "name", "name",
+            "category", "category",
+            "status", "status",
+            "price", "price",
+            "stock", "stock",
+            "owner", "owner",
+            "featured", "featured",
+            "updatedAt", "updated_at"
+    );
+    private static final String DEFAULT_SORT_COLUMN = "updated_at";
+    private static final String DEFAULT_SORT_DIR = "DESC";
 
     private final DemoItemRepository demoItemRepository;
 
@@ -37,6 +51,8 @@ public class DemoItemService {
             LocalDate dateTo,
             Boolean featured,
             Boolean inStock,
+            String sort,
+            String order,
             int page,
             int size
     ) {
@@ -47,9 +63,11 @@ public class DemoItemService {
         String kw = blankToNull(keyword);
         String cat = blankToNull(category);
         String st = blankToNull(status);
+        String sortColumn = resolveSortColumn(sort);
+        String sortDir = resolveSortDir(order);
 
         List<DemoItemResponse> items = demoItemRepository.findPage(
-                kw, cat, st, dateFrom, dateTo, featured, inStock, safeSize, offset
+                kw, cat, st, dateFrom, dateTo, featured, inStock, sortColumn, sortDir, safeSize, offset
         ).stream().map(DemoItemResponse::from).toList();
         long total = demoItemRepository.countPage(kw, cat, st, dateFrom, dateTo, featured, inStock);
 
@@ -76,13 +94,17 @@ public class DemoItemService {
             LocalDate dateFrom,
             LocalDate dateTo,
             Boolean featured,
-            Boolean inStock
+            Boolean inStock,
+            String sort,
+            String order
     ) {
         String kw = blankToNull(keyword);
         String cat = blankToNull(category);
         String st = blankToNull(status);
+        String sortColumn = resolveSortColumn(sort);
+        String sortDir = resolveSortDir(order);
         List<DemoItem> items = demoItemRepository.findForExport(
-                kw, cat, st, dateFrom, dateTo, featured, inStock, EXPORT_MAX_ROWS
+                kw, cat, st, dateFrom, dateTo, featured, inStock, sortColumn, sortDir, EXPORT_MAX_ROWS
         );
         List<List<Object>> rows = items.stream()
                 .map(item -> {
@@ -101,6 +123,24 @@ public class DemoItemService {
                 })
                 .toList();
         return ExcelWriter.write("상품목록", EXPORT_HEADERS, rows);
+    }
+
+    private static String resolveSortColumn(String sort) {
+        if (sort == null || sort.isBlank()) {
+            return DEFAULT_SORT_COLUMN;
+        }
+        return SORT_COLUMNS.getOrDefault(sort.trim(), DEFAULT_SORT_COLUMN);
+    }
+
+    private static String resolveSortDir(String order) {
+        if (order == null || order.isBlank()) {
+            return DEFAULT_SORT_DIR;
+        }
+        String normalized = order.trim().toLowerCase(Locale.ROOT);
+        if ("asc".equals(normalized)) {
+            return "ASC";
+        }
+        return DEFAULT_SORT_DIR;
     }
 
     private static String statusLabel(String status) {
