@@ -13,6 +13,7 @@ import com.miniproject.role.domain.UserRole;
 import com.miniproject.role.domain.UserRoleRepository;
 import com.miniproject.auth.dto.AuthTokens;
 import com.miniproject.auth.dto.ChangePasswordRequest;
+import com.miniproject.auth.dto.ExternalIdentity;
 import com.miniproject.auth.dto.LoginRequest;
 import com.miniproject.auth.dto.RegisterRequest;
 import com.miniproject.role.dto.RoleResponse;
@@ -29,7 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -113,6 +117,66 @@ public class AuthService {
         return createAuthTokens(user, settings);
     }
 
+    /**
+     * SSO/OAuth/OIDC 등으로 IdP 검증을 마친 외부 신원으로 앱 인가(세션)를 수립한다.
+     * <p>
+     * 흐름:
+     * <ol>
+     *   <li>이메일로 로컬 사용자를 찾거나 JIT 프로비저닝</li>
+     *   <li>활성 계정 확인</li>
+     *   <li>(선택) IdP Role → 로컬 Role 동기화</li>
+     *   <li>앱 JWT + refresh token 발급</li>
+     * </ol>
+     * 이후 API 인가·메뉴 권한은 기존과 동일하게 JWT 필터 + {@code MenuService.getMyMenus} 경로를 탄다.
+     *
+     * <pre>{@code
+     * // OAuth2/OIDC SuccessHandler 예시
+     * ExternalIdentity identity = ExternalIdentity.of(email, name, subject)
+     *         .withRoleCodes(idpRoles, false);
+     * AuthTokens tokens = authService.authorizeExternalIdentity(identity);
+     * refreshTokenCookieService.setRefreshTokenCookie(response, tokens.getRefreshToken());
+     * return tokens.toResponse();
+     * }</pre>
+     */
+    @Transactional
+    public AuthTokens authorizeExternalIdentity(ExternalIdentity identity) {
+        if (identity == null || identity.getEmail() == null || identity.getEmail().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "외부 신원에 이메일이 없습니다.");
+        }
+
+        String email = identity.getEmail().trim();
+        SystemSettings settings = systemSettingsService.getOrCreate();
+
+        User user = userRepository.findByEmail(email).orElse(null);
+        boolean created = false;
+        if (user == null) {
+            user = provisionExternalUser(email, identity);
+            created = true;
+        } else {
+            updateExternalUserProfile(user, identity);
+        }
+
+        assertUserEnabled(user);
+
+        if (created || identity.isSyncRoles()) {
+            assignRolesFromExternal(user, identity, settings);
+        }
+
+        loginAttemptService.resetFailedLoginAttempts(user.getId());
+        return createAuthTokens(user, settings);
+    }
+
+    /**
+     * 이미 로컬 {@link User}가 확보된 경우(커스텀 SSO 매핑 후) 앱 세션만 발급한다.
+     * 비밀번호 만료 검사는 하지 않는다.
+     */
+    @Transactional
+    public AuthTokens issueSession(User user) {
+        assertUserEnabled(user);
+        SystemSettings settings = systemSettingsService.getOrCreate();
+        return createAuthTokens(user, settings);
+    }
+
     @Transactional
     public AuthTokens refresh(String refreshTokenValue) {
         RefreshToken refreshToken = refreshTokenService.validateRefreshToken(refreshTokenValue);
@@ -127,6 +191,50 @@ public class AuthService {
     @Transactional
     public void logout(String refreshTokenValue) {
         refreshTokenService.revokeByToken(refreshTokenValue);
+    }
+
+    private User provisionExternalUser(String email, ExternalIdentity identity) {
+        String displayName = resolveDisplayName(identity, email);
+        // 로컬 비밀번호 로그인 불가에 가깝게, 추측 불가능한 해시 저장
+        String unusablePassword = passwordEncoder.encode("SSO:" + UUID.randomUUID());
+        User user = new User(email, unusablePassword, displayName);
+        return userRepository.save(user);
+    }
+
+    private void updateExternalUserProfile(User user, ExternalIdentity identity) {
+        String nextName = identity.getName() == null ? null : identity.getName().trim();
+        if (nextName != null && !nextName.isEmpty() && !nextName.equals(user.getName())) {
+            user.setName(nextName);
+            userRepository.save(user);
+        }
+    }
+
+    private void assignRolesFromExternal(User user, ExternalIdentity identity, SystemSettings settings) {
+        Set<String> codes = new LinkedHashSet<>();
+        if (identity.getRoleCodes() != null) {
+            for (String code : identity.getRoleCodes()) {
+                if (code != null && !code.isBlank()) {
+                    codes.add(code.trim());
+                }
+            }
+        }
+        if (codes.isEmpty()) {
+            codes.addAll(settings.getDefaultRoleCodes());
+        }
+
+        userRoleRepository.deleteByUserId(user.getId());
+        for (String code : codes) {
+            Role role = roleService.getByCode(code);
+            userRoleRepository.save(new UserRole(user, role));
+        }
+    }
+
+    private static String resolveDisplayName(ExternalIdentity identity, String email) {
+        if (identity.getName() != null && !identity.getName().isBlank()) {
+            return identity.getName().trim();
+        }
+        int at = email.indexOf('@');
+        return at > 0 ? email.substring(0, at) : email;
     }
 
     private AuthTokens createAuthTokens(User user, SystemSettings settings) {

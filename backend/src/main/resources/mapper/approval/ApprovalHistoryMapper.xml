@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.approval.domain.ApprovalHistoryRepository">
+
+    <resultMap id="HistMap" type="com.miniproject.approval.domain.ApprovalHistory">
+        <id property="id" column="id"/>
+        <result property="documentId" column="document_id"/>
+        <result property="actorId" column="actor_id"/>
+        <result property="action" column="action"/>
+        <result property="stepOrder" column="step_order"/>
+        <result property="lineId" column="line_id"/>
+        <result property="comment" column="comment"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="actorName" column="actor_name"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_approval_histories (
+            document_id, actor_id, action, step_order, line_id, comment, created_at
+        ) VALUES (
+            #{documentId}, #{actorId}, #{action}, #{stepOrder}, #{lineId}, #{comment}, #{createdAt}
+        )
+    </insert>
+
+    <select id="findByDocumentId" resultMap="HistMap">
+        SELECT h.*, u.name AS actor_name
+        FROM pjt_approval_histories h
+        LEFT JOIN pjt_users u ON u.id = h.actor_id
+        WHERE h.document_id = #{documentId}
+        ORDER BY h.id ASC
+    </select>
+</mapper>

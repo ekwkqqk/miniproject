@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="009-create-approval" author="miniproject">
+        <createTable tableName="pjt_approval_documents">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_approval_documents"/>
+            </column>
+            <column name="doc_no" type="VARCHAR(40)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_pjt_approval_doc_no"/>
+            </column>
+            <column name="title" type="VARCHAR(300)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="current_step" type="INTEGER"/>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="drafter_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_group_id" type="VARCHAR(64)"/>
+            <column name="submitted_at" type="TIMESTAMP"/>
+            <column name="completed_at" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="pjt_approval_documents" indexName="idx_approval_doc_drafter">
+            <column name="drafter_id"/>
+        </createIndex>
+        <createIndex tableName="pjt_approval_documents" indexName="idx_approval_doc_status">
+            <column name="status"/>
+        </createIndex>
+
+        <createTable tableName="pjt_approval_lines">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_approval_lines"/>
+            </column>
+            <column name="document_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="step_order" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_in_step" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="line_type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="approver_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="acted_at" type="TIMESTAMP"/>
+            <column name="comment" type="VARCHAR(1000)"/>
+        </createTable>
+        <createIndex tableName="pjt_approval_lines" indexName="idx_approval_line_doc">
+            <column name="document_id"/>
+        </createIndex>
+        <createIndex tableName="pjt_approval_lines" indexName="idx_approval_line_approver_status">
+            <column name="approver_id"/>
+            <column name="status"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="pjt_approval_lines"
+                                 baseColumnNames="document_id"
+                                 referencedTableName="pjt_approval_documents"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_approval_line_doc"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="pjt_approval_histories">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_approval_histories"/>
+            </column>
+            <column name="document_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actor_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="action" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="step_order" type="INTEGER"/>
+            <column name="line_id" type="BIGINT"/>
+            <column name="comment" type="VARCHAR(1000)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="pjt_approval_histories" indexName="idx_approval_hist_doc">
+            <column name="document_id"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="pjt_approval_histories"
+                                 baseColumnNames="document_id"
+                                 referencedTableName="pjt_approval_documents"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_approval_hist_doc"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="pjt_approval_doc_seq">
+            <column name="seq_date" type="DATE">
+                <constraints primaryKey="true" primaryKeyName="pk_pjt_approval_doc_seq"/>
+            </column>
+            <column name="seq_value" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

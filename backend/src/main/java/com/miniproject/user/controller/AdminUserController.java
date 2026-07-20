@@ -69,4 +69,12 @@ public class AdminUserController {
                 enabled ? "계정이 활성화되었습니다." : "계정이 비활성화되었습니다."
         );
     }
+
+    @PostMapping("/{userId}/reset-password")
+    public ApiResponse<UserResponse> resetPassword(@PathVariable Long userId) {
+        return ApiResponse.success(
+                adminUserService.resetPassword(userId),
+                "비밀번호가 초기화되었습니다."
+        );
+    }
 }

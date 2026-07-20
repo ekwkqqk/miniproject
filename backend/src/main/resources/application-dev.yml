@@ -18,6 +18,8 @@ app:
     upload-dir: ${FILE_UPLOAD_DIR:./uploads}
   seed:
     system-admin-password: ${SYSTEM_ADMIN_PASSWORD:Admin123!}
+  user:
+    reset-password: ${USER_RESET_PASSWORD:Admin123!}
 
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml

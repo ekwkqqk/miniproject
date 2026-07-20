@@ -8,6 +8,7 @@ import { i18nRoutes } from '@/features/i18n/routes'
 import { mailRoutes } from '@/features/mail/routes'
 import { settingsRoutes } from '@/features/settings/routes'
 import { demoRoutes } from '@/features/demo/routes'
+import { approvalRoutes } from '@/features/approval/routes'
 import { sharedRoutes } from '@/shared/routes'
 import { setupRouterGuards } from './guards'
 
@@ -28,6 +29,7 @@ const router = createRouter({
         ...mailRoutes,
         ...settingsRoutes,
         ...demoRoutes,
+        ...approvalRoutes,
       ],
     },
     ...sharedRoutes,

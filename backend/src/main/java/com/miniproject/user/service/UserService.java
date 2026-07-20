@@ -9,6 +9,7 @@ import com.miniproject.user.domain.UserRepository;
 import com.miniproject.role.domain.UserRoleRepository;
 import com.miniproject.role.dto.RoleResponse;
 import com.miniproject.user.dto.UserResponse;
+import com.miniproject.user.dto.UserSummaryResponse;
 import com.miniproject.role.domain.UserRole;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -36,6 +37,16 @@ public class UserService implements UserDetailsService {
                 .map(RoleResponse::from)
                 .toList();
         return new UserResponse(user.getId(), user.getEmail(), user.getName(), roles, user.getCreatedAt(), user.isEnabled());
+    }
+
+    public List<UserSummaryResponse> searchEnabledUsers(String email, String keyword, int limit) {
+        User me = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "로그인이 필요합니다."));
+        int safeLimit = Math.min(Math.max(limit, 1), 50);
+        String kw = keyword == null || keyword.isBlank() ? null : keyword.trim();
+        return userRepository.searchEnabled(kw, me.getId(), safeLimit).stream()
+                .map(u -> new UserSummaryResponse(u.getId(), u.getEmail(), u.getName()))
+                .toList();
     }
 
     @Override

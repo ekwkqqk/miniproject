@@ -17,6 +17,7 @@ import com.miniproject.user.dto.UpdateUserRequest;
 import com.miniproject.user.dto.UpdateUserEnabledRequest;
 import com.miniproject.user.dto.UpdateUserRolesRequest;
 import com.miniproject.user.dto.UserResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,19 +37,22 @@ public class AdminUserService {
     private final RefreshTokenService refreshTokenService;
     private final SystemSettingsService systemSettingsService;
     private final PasswordEncoder passwordEncoder;
+    private final String resetPassword;
 
     public AdminUserService(UserRepository userRepository,
                             UserRoleRepository userRoleRepository,
                             RoleService roleService,
                             RefreshTokenService refreshTokenService,
                             SystemSettingsService systemSettingsService,
-                            PasswordEncoder passwordEncoder) {
+                            PasswordEncoder passwordEncoder,
+                            @Value("${app.user.reset-password:Admin123!}") String resetPassword) {
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;
         this.roleService = roleService;
         this.refreshTokenService = refreshTokenService;
         this.systemSettingsService = systemSettingsService;
         this.passwordEncoder = passwordEncoder;
+        this.resetPassword = resetPassword;
     }
 
     @Transactional(readOnly = true)
@@ -171,6 +175,23 @@ public class AdminUserService {
         if (!user.isEnabled()) {
             refreshTokenService.revokeAllActiveSessions(user.getId());
         }
+        return toUserResponse(user);
+    }
+
+    @Transactional
+    public UserResponse resetPassword(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+        if (resetPassword == null || resetPassword.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "초기화 비밀번호가 설정되지 않았습니다. (app.user.reset-password)");
+        }
+        systemSettingsService.validatePasswordLength(resetPassword);
+
+        user.changePassword(passwordEncoder.encode(resetPassword));
+        user.resetFailedLoginAttempts();
+        userRepository.save(user);
+        refreshTokenService.revokeAllActiveSessions(user.getId());
         return toUserResponse(user);
     }
 

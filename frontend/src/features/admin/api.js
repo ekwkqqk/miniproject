@@ -52,6 +52,10 @@ export function updateUserEnabled(userId, enabled) {
   return client.put(`/admin/users/${userId}/enabled`, { enabled })
 }
 
+export function resetUserPassword(userId) {
+  return client.post(`/admin/users/${userId}/reset-password`)
+}
+
 export function getMenuAccessLogs(params = {}) {
   return client.get('/admin/menu-access-logs', { params })
 }

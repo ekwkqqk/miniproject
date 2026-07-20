@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.approval.domain.ApprovalLineRepository">
+
+    <resultMap id="LineMap" type="com.miniproject.approval.domain.ApprovalLine">
+        <id property="id" column="id"/>
+        <result property="documentId" column="document_id"/>
+        <result property="stepOrder" column="step_order"/>
+        <result property="sortInStep" column="sort_in_step"/>
+        <result property="lineType" column="line_type"/>
+        <result property="approverId" column="approver_id"/>
+        <result property="status" column="status"/>
+        <result property="active" column="active"/>
+        <result property="actedAt" column="acted_at"/>
+        <result property="comment" column="comment"/>
+        <result property="approverName" column="approver_name"/>
+        <result property="approverEmail" column="approver_email"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_approval_lines (
+            document_id, step_order, sort_in_step, line_type, approver_id, status, active, acted_at, comment
+        ) VALUES (
+            #{documentId}, #{stepOrder}, #{sortInStep}, #{lineType}, #{approverId}, #{status}, #{active},
+            #{actedAt}, #{comment}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_approval_lines SET
+            step_order = #{stepOrder},
+            sort_in_step = #{sortInStep},
+            line_type = #{lineType},
+            approver_id = #{approverId},
+            status = #{status},
+            active = #{active},
+            acted_at = #{actedAt},
+            comment = #{comment}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByDocumentId">
+        DELETE FROM pjt_approval_lines WHERE document_id = #{documentId}
+    </delete>
+
+    <select id="findById" resultMap="LineMap">
+        SELECT l.*, u.name AS approver_name, u.email AS approver_email
+        FROM pjt_approval_lines l
+        LEFT JOIN pjt_users u ON u.id = l.approver_id
+        WHERE l.id = #{id}
+    </select>
+
+    <select id="findByDocumentId" resultMap="LineMap">
+        SELECT l.*, u.name AS approver_name, u.email AS approver_email
+        FROM pjt_approval_lines l
+        LEFT JOIN pjt_users u ON u.id = l.approver_id
+        WHERE l.document_id = #{documentId}
+        ORDER BY l.step_order ASC, l.sort_in_step ASC, l.id ASC
+    </select>
+
+    <select id="countActedByDocumentId" resultType="long">
+        SELECT COUNT(*) FROM pjt_approval_lines
+        WHERE document_id = #{documentId}
+          AND status IN ('APPROVED', 'REJECTED', 'ACKNOWLEDGED')
+    </select>
+</mapper>

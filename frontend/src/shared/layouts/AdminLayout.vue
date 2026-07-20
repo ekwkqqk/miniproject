@@ -166,40 +166,29 @@ function toggleNav() {
             />
           </el-select>
 
-          <template v-if="isMobile">
-            <el-dropdown trigger="click" @command="onUserCommand">
-              <el-button
-                class="user-menu-trigger"
-                text
-                :aria-label="authStore.user?.name || tCode('common', 'user')"
-              >
-                <el-icon :size="18"><User /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item disabled>
-                    {{ authStore.user?.name || tCode('common', 'user') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item command="change-password" divided>
-                    {{ tCode('common', 'changePassword') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item command="logout">
-                    {{ tCode('common', 'logout') }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-          <template v-else>
-            <el-icon class="user-icon"><User /></el-icon>
-            <span class="user-name">{{ authStore.user?.name || tCode('common', 'user') }}</span>
-            <el-button link @click="router.push({ name: 'change-password' })">
-              {{ tCode('common', 'changePassword') }}
+          <el-dropdown trigger="click" @command="onUserCommand">
+            <el-button
+              class="user-menu-trigger"
+              text
+              :aria-label="authStore.user?.name || tCode('common', 'user')"
+            >
+              <el-icon :size="18"><User /></el-icon>
+              <span v-if="!isMobile" class="user-name">{{ authStore.user?.name || tCode('common', 'user') }}</span>
             </el-button>
-            <el-button type="danger" link @click="handleLogout">
-              {{ tCode('common', 'logout') }}
-            </el-button>
-          </template>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item disabled>
+                  {{ authStore.user?.name || tCode('common', 'user') }}
+                </el-dropdown-item>
+                <el-dropdown-item command="change-password" divided>
+                  {{ tCode('common', 'changePassword') }}
+                </el-dropdown-item>
+                <el-dropdown-item command="logout">
+                  {{ tCode('common', 'logout') }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </el-header>
 
@@ -212,17 +201,15 @@ function toggleNav() {
 
 <style scoped>
 .layout {
-  min-height: 100vh;
+  height: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .sidebar {
   background: var(--app-sidebar-bg, #1f2d3d);
   color: #fff;
-  height: 100vh;
-  position: sticky;
-  top: 0;
+  height: 100%;
   overflow: hidden;
   transition: width 0.2s ease;
   flex-shrink: 0;
@@ -236,7 +223,12 @@ function toggleNav() {
 
 .content-shell {
   min-width: 0;
+  min-height: 0;
   flex: 1;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -248,6 +240,7 @@ function toggleNav() {
   border-bottom: 1px solid var(--app-border-color, #ebeef5);
   background: var(--app-header-bg, #fff);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .header-left,
@@ -274,6 +267,12 @@ function toggleNav() {
   flex-shrink: 0;
 }
 
+.user-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .brand-inline {
   font-weight: 700;
   font-size: 15px;
@@ -297,12 +296,18 @@ function toggleNav() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 14px;
 }
 
 .main {
   background: var(--app-page-bg, #f5f7fa);
   padding: var(--page-padding);
   min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 767px) {

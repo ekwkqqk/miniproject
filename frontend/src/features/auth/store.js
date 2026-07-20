@@ -10,6 +10,7 @@ import {
 } from '@/features/auth/tokenHolder'
 import { isAccessTokenExpired, refreshSession } from '@/features/auth/refreshSession'
 import { useMenuStore } from '@/features/menu/store'
+import { useApprovalBadgeStore } from '@/features/approval/badgeStore'
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref(getAccessToken())
@@ -39,12 +40,14 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken.value = ''
     user.value = null
     useMenuStore().clearMenus()
+    useApprovalBadgeStore().clear()
   }
 
   async function restoreSession() {
     // access token이 아직 유효하면 그대로 통과
     if (!isAccessTokenExpired(getAccessToken())) {
       sessionReady.value = true
+      useApprovalBadgeStore().startPolling()
       return true
     }
 
@@ -54,6 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
       const data = await refreshSession()
       setSession(data)
       await useMenuStore().fetchMyMenus()
+      useApprovalBadgeStore().startPolling()
       sessionReady.value = true
       return true
     } catch {
@@ -69,6 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (data.success) {
         setSession(data.data)
         await useMenuStore().fetchMyMenus()
+        useApprovalBadgeStore().startPolling()
         sessionReady.value = true
       }
       return data
@@ -83,6 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (data.success) {
         setSession(data.data)
         await useMenuStore().fetchMyMenus()
+        useApprovalBadgeStore().startPolling()
         sessionReady.value = true
       }
       return data

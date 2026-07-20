@@ -10,7 +10,7 @@ import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
 import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
 import { formatDateTime } from '@/shared/utils/date'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
@@ -26,6 +26,7 @@ const createVisible = ref(false)
 const creating = ref(false)
 const editVisible = ref(false)
 const saving = ref(false)
+const resettingPassword = ref(false)
 
 const createForm = reactive({
   name: '',
@@ -105,6 +106,31 @@ async function handleEditSave() {
     ElMessage.error(error.response?.data?.message || error.message)
   } finally {
     saving.value = false
+  }
+}
+
+async function handleResetPassword() {
+  if (!editForm.id) return
+  try {
+    await ElMessageBox.confirm(
+      '설정된 기본 비밀번호로 초기화합니다. 기존 세션은 만료됩니다. 계속할까요?',
+      '비밀번호 초기화',
+      { type: 'warning', confirmButtonText: '초기화', cancelButtonText: '취소' },
+    )
+  } catch {
+    return
+  }
+
+  resettingPassword.value = true
+  try {
+    const { data } = await adminApi.resetUserPassword(editForm.id)
+    if (data.success) {
+      ElMessage.success(data.message || '비밀번호가 초기화되었습니다.')
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || error.message)
+  } finally {
+    resettingPassword.value = false
   }
 }
 
@@ -365,8 +391,22 @@ onMounted(() => {
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button :disabled="saving" @click="editVisible = false">취소</el-button>
-        <el-button type="primary" :loading="saving" @click="handleEditSave">저장</el-button>
+        <div class="edit-footer">
+          <el-button
+            v-if="canUpdate"
+            type="warning"
+            plain
+            :loading="resettingPassword"
+            :disabled="saving"
+            @click="handleResetPassword"
+          >
+            비밀번호 초기화
+          </el-button>
+          <div class="edit-footer__right">
+            <el-button :disabled="saving || resettingPassword" @click="editVisible = false">취소</el-button>
+            <el-button type="primary" :loading="saving" :disabled="resettingPassword" @click="handleEditSave">저장</el-button>
+          </div>
+        </div>
       </template>
     </ResponsiveDialog>
   </PageLayout>
@@ -401,5 +441,19 @@ onMounted(() => {
   margin-top: 4px;
   color: #909399;
   font-size: 12px;
+}
+
+.edit-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.edit-footer__right {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
 }
 </style>

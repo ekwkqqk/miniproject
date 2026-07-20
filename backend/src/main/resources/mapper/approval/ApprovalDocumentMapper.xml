@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.miniproject.approval.domain.ApprovalDocumentRepository">
+
+    <resultMap id="DocMap" type="com.miniproject.approval.domain.ApprovalDocument">
+        <id property="id" column="id"/>
+        <result property="docNo" column="doc_no"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="status" column="status"/>
+        <result property="currentStep" column="current_step"/>
+        <result property="version" column="version"/>
+        <result property="drafterId" column="drafter_id"/>
+        <result property="fileGroupId" column="file_group_id"/>
+        <result property="submittedAt" column="submitted_at"/>
+        <result property="completedAt" column="completed_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO pjt_approval_documents (
+            doc_no, title, content, status, current_step, version, drafter_id, file_group_id,
+            submitted_at, completed_at, created_at, updated_at
+        ) VALUES (
+            #{docNo}, #{title}, #{content}, #{status}, #{currentStep}, #{version}, #{drafterId}, #{fileGroupId},
+            #{submittedAt}, #{completedAt}, #{createdAt}, #{updatedAt}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE pjt_approval_documents SET
+            title = #{title},
+            content = #{content},
+            status = #{status},
+            current_step = #{currentStep},
+            version = #{version},
+            file_group_id = #{fileGroupId},
+            submitted_at = #{submittedAt},
+            completed_at = #{completedAt},
+            updated_at = #{updatedAt}
+        WHERE id = #{id} AND version = #{version} - 1
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM pjt_approval_documents WHERE id = #{id}
+    </delete>
+
+    <select id="findById" resultMap="DocMap">
+        SELECT * FROM pjt_approval_documents WHERE id = #{id}
+    </select>
+
+    <sql id="boxWhere">
+        <where>
+            <choose>
+                <when test="box == 'drafts'">
+                    AND drafter_id = #{viewerId}
+                </when>
+                <when test="box == 'inbox'">
+                    AND id IN (
+                        SELECT document_id FROM pjt_approval_lines
+                        WHERE approver_id = #{viewerId}
+                          AND status = 'PENDING'
+                          AND line_type IN ('APPROVE', 'AGREE', 'POST')
+                          AND (
+                            (line_type IN ('APPROVE', 'AGREE') AND active = TRUE)
+                            OR line_type = 'POST'
+                          )
+                    )
+                </when>
+                <when test="box == 'notices'">
+                    AND id IN (
+                        SELECT document_id FROM pjt_approval_lines
+                        WHERE approver_id = #{viewerId}
+                          AND line_type = 'NOTIFY'
+                          <choose>
+                              <when test="status == 'ALL'">
+                                  AND status IN ('PENDING', 'ACKNOWLEDGED', 'SKIPPED')
+                              </when>
+                              <when test="status == 'ACKNOWLEDGED'">
+                                  AND status = 'ACKNOWLEDGED'
+                              </when>
+                              <otherwise>
+                                  AND status = 'PENDING'
+                              </otherwise>
+                          </choose>
+                    )
+                </when>
+                <otherwise>
+                    AND (
+                        drafter_id = #{viewerId}
+                        OR id IN (SELECT document_id FROM pjt_approval_lines WHERE approver_id = #{viewerId})
+                    )
+                </otherwise>
+            </choose>
+            <if test="status != null and status != '' and box != 'notices'">
+                AND status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    title ILIKE CONCAT('%', #{keyword}, '%')
+                    OR doc_no ILIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+        </where>
+    </sql>
+
+    <select id="findPage" resultMap="DocMap">
+        SELECT * FROM pjt_approval_documents
+        <include refid="boxWhere"/>
+        ORDER BY updated_at DESC, id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*) FROM pjt_approval_documents
+        <include refid="boxWhere"/>
+    </select>
+
+    <update id="upsertDocSeq">
+        INSERT INTO pjt_approval_doc_seq (seq_date, seq_value)
+        VALUES (#{seqDate}, 1)
+        ON CONFLICT (seq_date) DO UPDATE SET seq_value = pjt_approval_doc_seq.seq_value + 1
+    </update>
+
+    <select id="nextDocSeq" resultType="int">
+        SELECT seq_value FROM pjt_approval_doc_seq WHERE seq_date = #{seqDate}
+    </select>
+</mapper>

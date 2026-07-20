@@ -49,6 +49,8 @@ export async function setupRouterGuards(router) {
 
     if (to.meta.requiresAuth && authStore.isAuthenticated) {
       await ensureI18nLoaded()
+      const { useApprovalBadgeStore } = await import('@/features/approval/badgeStore')
+      useApprovalBadgeStore().startPolling()
     }
 
     // 로그인/비번변경 등 게스트 화면에서도 common 액션 문구 사용

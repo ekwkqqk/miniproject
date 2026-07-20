@@ -120,6 +120,7 @@ npm run preview
 |------|------|--------|
 | `JWT_SECRET` | JWT 서명 키 (32자 이상 권장) | 개발용 플레이스홀더 |
 | `SYSTEM_ADMIN_PASSWORD` | 시드 관리자 비밀번호 | `Admin123!` |
+| `USER_RESET_PASSWORD` | 관리자 비밀번호 초기화 값 (`app.user.reset-password`) | `Admin123!` |
 | `LIQUIBASE_ENABLED` | Liquibase 실행 여부 | `true` |
 | `MAIL_ENABLED` | 메일 발송 활성화 | `false` |
 | `FILE_UPLOAD_DIR` | 업로드 저장 경로 | `./uploads` |

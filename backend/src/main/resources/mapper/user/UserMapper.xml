@@ -30,6 +30,23 @@
         ORDER BY id ASC
     </select>
 
+    <select id="searchEnabled" resultMap="UserResultMap">
+        SELECT <include refid="UserColumns"/>
+        FROM pjt_users
+        WHERE enabled = TRUE
+        <if test="excludeUserId != null">
+            AND id &lt;&gt; #{excludeUserId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                name ILIKE CONCAT('%', #{keyword}, '%')
+                OR email ILIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY name ASC, id ASC
+        LIMIT #{limit}
+    </select>
+
     <select id="findByEmail" resultMap="UserResultMap">
         SELECT <include refid="UserColumns"/>
         FROM pjt_users
