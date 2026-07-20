@@ -9,7 +9,8 @@ import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
 import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
 import { formatDateTime } from '@/shared/utils/date'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { confirmDialog } from '@/shared/utils/dialog'
 
 const authStore = useAuthStore()
 const { canUpdate, canDelete } = useMenuAuth()
@@ -146,7 +147,7 @@ async function handleCreate() {
 
 async function handleDelete(role) {
   try {
-    await ElMessageBox.confirm(`Role "${role.name}"을(를) 삭제할까요?`, '확인', { type: 'warning' })
+    await confirmDialog(`Role "${role.name}"을(를) 삭제할까요?`, '확인', { type: 'warning' })
     const { data } = await adminApi.deleteRole(role.id)
     if (data.success) {
       ElMessage.success('Role이 삭제되었습니다.')

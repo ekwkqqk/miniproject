@@ -375,7 +375,6 @@ onMounted(load)
       v-model="viewOpen"
       :title="viewItem?.name || '상품 조회'"
       :width="720"
-      themed-header
       destroy-on-close
     >
       <div v-loading="detailLoading">
@@ -432,7 +431,6 @@ onMounted(load)
       v-model="editOpen"
       title="상품 수정"
       :width="720"
-      themed-header
       destroy-on-close
     >
       <div v-loading="detailLoading">

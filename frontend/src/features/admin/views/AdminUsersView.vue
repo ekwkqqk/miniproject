@@ -10,7 +10,8 @@ import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
 import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
 import { formatDateTime } from '@/shared/utils/date'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { confirmDialog } from '@/shared/utils/dialog'
 import { Plus } from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
@@ -112,7 +113,7 @@ async function handleEditSave() {
 async function handleResetPassword() {
   if (!editForm.id) return
   try {
-    await ElMessageBox.confirm(
+    await confirmDialog(
       '설정된 기본 비밀번호로 초기화합니다. 기존 세션은 만료됩니다. 계속할까요?',
       '비밀번호 초기화',
       { type: 'warning', confirmButtonText: '초기화', cancelButtonText: '취소' },

@@ -7,7 +7,8 @@ import { useMenuStore } from '@/features/menu/store'
 import { useI18n } from '@/features/i18n/useI18n'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { confirmDialog } from '@/shared/utils/dialog'
 
 const { canUpdate, canDelete } = useMenuAuth()
 const menuStore = useMenuStore()
@@ -334,7 +335,7 @@ async function handleDelete() {
   if (!canDelete.value || mode.value !== 'edit' || !selectedKey.value) return
   const name = form.value.name
   try {
-    await ElMessageBox.confirm(`메뉴 "${name}"을(를) 삭제할까요?`, '확인', { type: 'warning' })
+    await confirmDialog(`메뉴 "${name}"을(를) 삭제할까요?`, '확인', { type: 'warning' })
     const { data } = await adminApi.deleteMenu(selectedKey.value)
     if (data.success) {
       ElMessage.success('메뉴가 삭제되었습니다.')

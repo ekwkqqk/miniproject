@@ -7,7 +7,8 @@ import PageLayout from '@/shared/components/PageLayout.vue'
 import SearchPanel from '@/shared/components/SearchPanel.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
 import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { confirmDialog } from '@/shared/utils/dialog'
 
 const { canUpdate, canDelete } = useMenuAuth()
 const { tCode } = useI18n()
@@ -127,7 +128,7 @@ async function handleSave() {
 
 async function handleDelete(row) {
   try {
-    await ElMessageBox.confirm(`메시지 "${row.groupCode}.${row.code}"을(를) 삭제할까요?`, '확인', {
+    await confirmDialog(`메시지 "${row.groupCode}.${row.code}"을(를) 삭제할까요?`, '확인', {
       type: 'warning',
     })
     const { data } = await i18nAdminApi.deleteMessage(row.id)

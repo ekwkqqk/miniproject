@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { confirmDialog, themedDialogProps } from '@/shared/utils/dialog'
 import { useBreakpoint } from '@/shared/composables/useBreakpoint'
 import { useI18n } from '@/features/i18n/useI18n'
 import PageLayout from '@/shared/components/PageLayout.vue'
@@ -12,6 +13,7 @@ import { formatPrice, statusMeta } from '@/features/demo/data'
 const { device, isMobile } = useBreakpoint()
 const { tCode } = useI18n()
 
+const basicDialogProps = themedDialogProps({ title: '기본 Dialog', width: 480 })
 const basicOpen = ref(false)
 const formOpen = ref(false)
 const detailOpen = ref(false)
@@ -62,7 +64,7 @@ onMounted(loadItems)
 
 async function openConfirm() {
   try {
-    await ElMessageBox.confirm(
+    await confirmDialog(
       '이 동작은 데모용 확인 팝업입니다. 모바일에서는 폭이 화면에 맞춰집니다.',
       '확인',
       {
@@ -125,7 +127,7 @@ function submitForm() {
       </div>
     </ContentPanel>
 
-    <ResponsiveDialog v-model="basicOpen" title="기본 Dialog" :width="480">
+    <ResponsiveDialog v-model="basicOpen" v-bind="basicDialogProps">
       <p>
         데스크톱·태블릿은 중앙 카드, 모바일은 하단 시트(Bottom Sheet) 형태로 열립니다.
       </p>

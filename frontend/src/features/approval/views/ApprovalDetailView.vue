@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { confirmDialog } from '@/shared/utils/dialog'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
 import FileAttachment from '@/shared/components/FileAttachment.vue'
@@ -123,7 +124,7 @@ async function doAck() {
 
 async function doRecall() {
   try {
-    await ElMessageBox.confirm('문서를 회수하시겠습니까?', '회수', { type: 'warning' })
+    await confirmDialog('문서를 회수하시겠습니까?', '회수', { type: 'warning' })
     await approvalApi.recallDocument(doc.value.id)
     ElMessage.success('회수되었습니다.')
     await afterAction()

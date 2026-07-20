@@ -5,6 +5,7 @@ import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import '@/shared/styles/responsive.css'
 import '@/shared/styles/dark.css'
+import '@/shared/styles/dialog-theme.css'
 
 import App from './App.vue'
 import router from './router'

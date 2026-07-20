@@ -6,7 +6,8 @@ import { useI18n } from '@/features/i18n/useI18n'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
 import ResponsiveDialog from '@/shared/components/ResponsiveDialog.vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { confirmDialog } from '@/shared/utils/dialog'
 
 const { canUpdate, canDelete } = useMenuAuth()
 const { tCode } = useI18n()
@@ -93,7 +94,7 @@ async function handleSave() {
 
 async function handleDelete(row) {
   try {
-    await ElMessageBox.confirm(`템플릿 "${row.code}"을(를) 삭제할까요?`, '확인', { type: 'warning' })
+    await confirmDialog(`템플릿 "${row.code}"을(를) 삭제할까요?`, '확인', { type: 'warning' })
     const { data } = await mailApi.deleteTemplate(row.id)
     if (data.success) {
       ElMessage.success('템플릿이 삭제되었습니다.')
