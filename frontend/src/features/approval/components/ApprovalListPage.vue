@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import SearchPanel from '@/shared/components/SearchPanel.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
-import { statusMeta } from '@/features/approval/data'
+import { docClassLabel, statusMeta } from '@/features/approval/data'
 import * as approvalApi from '@/features/approval/api'
 import { useApprovalBadgeStore } from '@/features/approval/badgeStore'
 import { formatDateTime } from '@/shared/utils/date'
@@ -33,10 +33,9 @@ async function load() {
     const params = { box: props.box, page: page.value, size: size.value }
     if (filters.keyword?.trim()) params.keyword = filters.keyword.trim()
     if (filters.status) params.status = filters.status
-    let res
-    if (props.box === 'inbox') res = await approvalApi.getInbox(params)
-    else if (props.box === 'notices') res = await approvalApi.getNotices(params)
-    else res = await approvalApi.getDocuments(params)
+    const res = props.box === 'notices'
+      ? await approvalApi.getNotices(params)
+      : await approvalApi.getDocuments(params)
     if (res.data.success) {
       rows.value = res.data.data.items || []
       total.value = res.data.data.total || 0
@@ -85,6 +84,7 @@ onMounted(load)
       <el-form-item v-else-if="showStatusFilter" label="상태">
         <el-select v-model="filters.status" clearable placeholder="전체" style="width: 140px">
           <el-option label="임시저장" value="DRAFT" />
+          <el-option label="예약상신" value="SCHEDULED" />
           <el-option label="진행중" value="IN_PROGRESS" />
           <el-option label="승인" value="APPROVED" />
           <el-option label="반려" value="REJECTED" />
@@ -94,15 +94,21 @@ onMounted(load)
 
     <ContentPanel :title="title" :count="total" :loading="loading">
       <template v-if="createPath" #header-actions>
-        <el-button type="primary" @click="router.push(createPath)">기안 작성</el-button>
+        <el-button type="primary" @click="router.push({ name: 'approval-new' })">기안 작성</el-button>
       </template>
       <el-table :data="rows" stripe border style="width: 100%" @row-click="openDetail">
         <el-table-column prop="docNo" label="문서번호" width="160" />
         <el-table-column prop="title" label="제목" min-width="200" show-overflow-tooltip />
+        <el-table-column label="종류" width="90" align="center">
+          <template #default="{ row }">{{ docClassLabel(row.docClass) }}</template>
+        </el-table-column>
         <el-table-column label="상태" width="100" align="center">
           <template #default="{ row }">
             <el-tag size="small" :type="statusMeta(row.status).type">{{ statusMeta(row.status).label }}</el-tag>
           </template>
+        </el-table-column>
+        <el-table-column label="예약상신" width="160">
+          <template #default="{ row }">{{ row.scheduledSubmitAt ? formatDateTime(row.scheduledSubmitAt) : '-' }}</template>
         </el-table-column>
         <el-table-column label="상신일" width="160">
           <template #default="{ row }">{{ row.submittedAt ? formatDateTime(row.submittedAt) : '-' }}</template>

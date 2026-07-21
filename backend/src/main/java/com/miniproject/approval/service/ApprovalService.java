@@ -10,6 +10,7 @@ import com.miniproject.approval.domain.ApprovalStatuses;
 import com.miniproject.approval.dto.ApprovalActionRequest;
 import com.miniproject.approval.dto.ApprovalDocumentRequest;
 import com.miniproject.approval.dto.ApprovalDocumentResponse;
+import com.miniproject.approval.dto.ApprovalScheduleRequest;
 import com.miniproject.common.BusinessException;
 import com.miniproject.common.ErrorCode;
 import com.miniproject.user.domain.User;
@@ -63,8 +64,10 @@ public class ApprovalService {
             m.put("docNo", d.getDocNo());
             m.put("title", d.getTitle());
             m.put("status", d.getStatus());
+            m.put("docClass", d.getDocClass());
             m.put("currentStep", d.getCurrentStep());
             m.put("drafterId", d.getDrafterId());
+            m.put("scheduledSubmitAt", d.getScheduledSubmitAt());
             m.put("submittedAt", d.getSubmittedAt());
             m.put("completedAt", d.getCompletedAt());
             m.put("updatedAt", d.getUpdatedAt());
@@ -98,10 +101,12 @@ public class ApprovalService {
         doc.setTitle(request.getTitle().trim());
         doc.setContent(request.getContent().trim());
         doc.setStatus(ApprovalStatuses.DRAFT);
+        doc.setDocClass(ApprovalStatuses.normalizeDocClass(request.getDocClass()));
         doc.setCurrentStep(null);
         doc.setVersion(0);
         doc.setDrafterId(me.getId());
         doc.setFileGroupId(blankToNull(request.getFileGroupId()));
+        doc.setScheduledSubmitAt(request.getScheduledSubmitAt());
         doc.setCreatedAt(now);
         doc.setUpdatedAt(now);
         documentRepository.insert(doc);
@@ -115,13 +120,19 @@ public class ApprovalService {
         User me = requireUser(email);
         ApprovalDocument doc = requireDoc(id);
         assertDrafter(me, doc);
-        if (!ApprovalStatuses.DRAFT.equals(doc.getStatus())) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "임시저장 문서만 수정할 수 있습니다.");
+        if (!ApprovalStatuses.DRAFT.equals(doc.getStatus()) && !ApprovalStatuses.SCHEDULED.equals(doc.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "임시저장/예약 문서만 수정할 수 있습니다.");
         }
         validateLines(me.getId(), request.getLines(), false);
         doc.setTitle(request.getTitle().trim());
         doc.setContent(request.getContent().trim());
+        doc.setDocClass(ApprovalStatuses.normalizeDocClass(request.getDocClass()));
         doc.setFileGroupId(blankToNull(request.getFileGroupId()));
+        doc.setScheduledSubmitAt(request.getScheduledSubmitAt());
+        if (ApprovalStatuses.SCHEDULED.equals(doc.getStatus())) {
+            doc.setStatus(ApprovalStatuses.DRAFT);
+            doc.setScheduledSubmitAt(null);
+        }
         doc.setVersion(doc.getVersion() + 1);
         doc.setUpdatedAt(LocalDateTime.now());
         if (documentRepository.update(doc) == 0) {
@@ -137,8 +148,8 @@ public class ApprovalService {
         User me = requireUser(email);
         ApprovalDocument doc = requireDoc(id);
         assertDrafter(me, doc);
-        if (!ApprovalStatuses.DRAFT.equals(doc.getStatus())) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "임시저장 문서만 삭제할 수 있습니다.");
+        if (!ApprovalStatuses.DRAFT.equals(doc.getStatus()) && !ApprovalStatuses.SCHEDULED.equals(doc.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "임시저장/예약 문서만 삭제할 수 있습니다.");
         }
         documentRepository.deleteById(id);
     }
@@ -148,14 +159,63 @@ public class ApprovalService {
         User me = requireUser(email);
         ApprovalDocument doc = requireDoc(id);
         assertDrafter(me, doc);
-        if (!ApprovalStatuses.DRAFT.equals(doc.getStatus())) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "임시저장 문서만 상신할 수 있습니다.");
+        if (!ApprovalStatuses.DRAFT.equals(doc.getStatus()) && !ApprovalStatuses.SCHEDULED.equals(doc.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "임시저장/예약 문서만 상신할 수 있습니다.");
+        }
+        return startSubmit(doc, me.getId(), "SUBMIT");
+    }
+
+    @Transactional
+    public ApprovalDocumentResponse scheduleSubmit(String email, Long id, ApprovalScheduleRequest request) {
+        User me = requireUser(email);
+        ApprovalDocument doc = requireDoc(id);
+        assertDrafter(me, doc);
+        if (!ApprovalStatuses.DRAFT.equals(doc.getStatus()) && !ApprovalStatuses.SCHEDULED.equals(doc.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "임시저장/예약 문서만 예약 상신할 수 있습니다.");
+        }
+        LocalDateTime at = request.getScheduledSubmitAt();
+        if (at == null || !at.isAfter(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "예약 상신 시각은 현재 이후여야 합니다.");
         }
         if (doc.getTitle() == null || doc.getTitle().isBlank() || doc.getContent() == null || doc.getContent().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "제목과 내용은 필수입니다.");
         }
         List<ApprovalLine> lines = lineRepository.findByDocumentId(id);
         validatePersistedLines(me.getId(), lines, true);
+
+        doc.setScheduledSubmitAt(at);
+        doc.setStatus(ApprovalStatuses.SCHEDULED);
+        doc.setVersion(doc.getVersion() + 1);
+        doc.setUpdatedAt(LocalDateTime.now());
+        if (documentRepository.update(doc) == 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "문서 상태 충돌입니다. 새로고침 후 다시 시도하세요.");
+        }
+        addHistory(id, me.getId(), "SCHEDULE", null, null, null);
+        return toResponse(requireDoc(id));
+    }
+
+    @Transactional
+    public int processDueScheduledSubmits() {
+        List<ApprovalDocument> due = documentRepository.findDueScheduled(LocalDateTime.now(), 50);
+        int count = 0;
+        for (ApprovalDocument doc : due) {
+            try {
+                startSubmit(doc, doc.getDrafterId(), "SCHEDULE_SUBMIT");
+                count++;
+            } catch (RuntimeException ignored) {
+                // 다음 주기에 재시도
+            }
+        }
+        return count;
+    }
+
+    private ApprovalDocumentResponse startSubmit(ApprovalDocument doc, Long actorId, String historyAction) {
+        Long id = doc.getId();
+        if (doc.getTitle() == null || doc.getTitle().isBlank() || doc.getContent() == null || doc.getContent().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "제목과 내용은 필수입니다.");
+        }
+        List<ApprovalLine> lines = lineRepository.findByDocumentId(id);
+        validatePersistedLines(doc.getDrafterId(), lines, true);
 
         for (ApprovalLine line : lines) {
             if (ApprovalStatuses.isBlocking(line.getLineType())) {
@@ -182,12 +242,13 @@ public class ApprovalService {
         doc.setStatus(ApprovalStatuses.IN_PROGRESS);
         doc.setCurrentStep(minStep);
         doc.setSubmittedAt(now);
+        doc.setScheduledSubmitAt(null);
         doc.setVersion(doc.getVersion() + 1);
         doc.setUpdatedAt(now);
         if (documentRepository.update(doc) == 0) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "문서 상태 충돌입니다. 새로고침 후 다시 시도하세요.");
         }
-        addHistory(id, me.getId(), "SUBMIT", minStep, null, null);
+        addHistory(id, actorId, historyAction, minStep, null, null);
         return toResponse(requireDoc(id));
     }
 
@@ -196,6 +257,15 @@ public class ApprovalService {
         User me = requireUser(email);
         ApprovalDocument doc = requireDoc(id);
         assertDrafter(me, doc);
+        if (ApprovalStatuses.SCHEDULED.equals(doc.getStatus())) {
+            doc.setStatus(ApprovalStatuses.DRAFT);
+            doc.setScheduledSubmitAt(null);
+            doc.setVersion(doc.getVersion() + 1);
+            doc.setUpdatedAt(LocalDateTime.now());
+            documentRepository.update(doc);
+            addHistory(id, me.getId(), "CANCEL_SCHEDULE", null, null, null);
+            return toResponse(requireDoc(id));
+        }
         if (!ApprovalStatuses.IN_PROGRESS.equals(doc.getStatus())) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "진행 중 문서만 회수할 수 있습니다.");
         }
@@ -237,9 +307,74 @@ public class ApprovalService {
     public Map<String, Long> badges(String email) {
         User me = requireUser(email);
         Map<String, Long> result = new HashMap<>();
-        result.put("inbox", documentRepository.countPage(me.getId(), "inbox", null, null));
+        result.put("pending", documentRepository.countPage(me.getId(), "pending", null, null));
+        result.put("held", documentRepository.countPage(me.getId(), "held", null, null));
+        result.put("upcoming", documentRepository.countPage(me.getId(), "upcoming", null, null));
         result.put("notices", documentRepository.countPage(me.getId(), "notices", "PENDING", null));
+        // 하위 호환
+        result.put("inbox", result.get("pending"));
         return result;
+    }
+
+    @Transactional
+    public ApprovalDocumentResponse hold(String email, Long documentId, ApprovalActionRequest request) {
+        User me = requireUser(email);
+        ApprovalLine line = requireActionLine(documentId, request.getLineId(), me.getId());
+        if (!ApprovalStatuses.LINE_PENDING.equals(line.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "대기 중인 결재만 보류할 수 있습니다.");
+        }
+        if (ApprovalStatuses.TYPE_NOTIFY.equals(line.getLineType())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "통보는 보류할 수 없습니다.");
+        }
+        if (ApprovalStatuses.isBlocking(line.getLineType()) && !line.isActive()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "아직 처리 순서가 아닙니다.");
+        }
+        line.setStatus(ApprovalStatuses.LINE_HELD);
+        line.setActive(false);
+        line.setComment(blankToNull(request.getComment()));
+        lineRepository.update(line);
+        ApprovalDocument doc = requireDoc(documentId);
+        doc.setVersion(doc.getVersion() + 1);
+        doc.setUpdatedAt(LocalDateTime.now());
+        documentRepository.update(doc);
+        addHistory(documentId, me.getId(), "HOLD", line.getStepOrder(), line.getId(), line.getComment());
+        return toResponse(requireDoc(documentId));
+    }
+
+    @Transactional
+    public ApprovalDocumentResponse resume(String email, Long documentId, ApprovalActionRequest request) {
+        User me = requireUser(email);
+        ApprovalLine line = requireActionLine(documentId, request.getLineId(), me.getId());
+        if (!ApprovalStatuses.LINE_HELD.equals(line.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "보류 중인 결재만 해제할 수 있습니다.");
+        }
+        ApprovalDocument doc = requireDoc(documentId);
+        line.setStatus(ApprovalStatuses.LINE_PENDING);
+        if (ApprovalStatuses.isBlocking(line.getLineType())
+                && doc.getCurrentStep() != null
+                && doc.getCurrentStep() == line.getStepOrder()) {
+            line.setActive(true);
+        } else {
+            line.setActive(!ApprovalStatuses.isBlocking(line.getLineType()));
+        }
+        lineRepository.update(line);
+        doc.setVersion(doc.getVersion() + 1);
+        doc.setUpdatedAt(LocalDateTime.now());
+        documentRepository.update(doc);
+        addHistory(documentId, me.getId(), "RESUME", line.getStepOrder(), line.getId(), null);
+        return toResponse(requireDoc(documentId));
+    }
+
+    private ApprovalLine requireActionLine(Long documentId, Long lineId, Long userId) {
+        ApprovalLine line = lineRepository.findById(lineId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "결재선을 찾을 수 없습니다."));
+        if (!Objects.equals(line.getDocumentId(), documentId)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "문서와 결재선이 일치하지 않습니다.");
+        }
+        if (!Objects.equals(line.getApproverId(), userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "본인 결재선만 처리할 수 있습니다.");
+        }
+        return line;
     }
 
     @Transactional
@@ -283,6 +418,9 @@ public class ApprovalService {
         if (ApprovalStatuses.TYPE_NOTIFY.equals(line.getLineType())) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "통보는 승인/반려할 수 없습니다.");
         }
+        if (ApprovalStatuses.LINE_HELD.equals(line.getStatus())) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "보류 중인 결재입니다. 보류 해제 후 처리하세요.");
+        }
         if (!ApprovalStatuses.LINE_PENDING.equals(line.getStatus())) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "대기 상태가 아닌 라인입니다.");
         }
@@ -318,7 +456,9 @@ public class ApprovalService {
 
     private void rejectDocument(ApprovalDocument doc, List<ApprovalLine> lines, LocalDateTime now) {
         for (ApprovalLine l : lines) {
-            if (ApprovalStatuses.LINE_PENDING.equals(l.getStatus()) || ApprovalStatuses.LINE_WAITING.equals(l.getStatus())) {
+            if (ApprovalStatuses.LINE_PENDING.equals(l.getStatus())
+                    || ApprovalStatuses.LINE_WAITING.equals(l.getStatus())
+                    || ApprovalStatuses.LINE_HELD.equals(l.getStatus())) {
                 l.setStatus(ApprovalStatuses.LINE_SKIPPED);
                 l.setActive(false);
                 lineRepository.update(l);

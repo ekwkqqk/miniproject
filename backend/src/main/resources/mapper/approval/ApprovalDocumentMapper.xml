@@ -9,10 +9,12 @@
         <result property="title" column="title"/>
         <result property="content" column="content"/>
         <result property="status" column="status"/>
+        <result property="docClass" column="doc_class"/>
         <result property="currentStep" column="current_step"/>
         <result property="version" column="version"/>
         <result property="drafterId" column="drafter_id"/>
         <result property="fileGroupId" column="file_group_id"/>
+        <result property="scheduledSubmitAt" column="scheduled_submit_at"/>
         <result property="submittedAt" column="submitted_at"/>
         <result property="completedAt" column="completed_at"/>
         <result property="createdAt" column="created_at"/>
@@ -21,11 +23,11 @@
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO pjt_approval_documents (
-            doc_no, title, content, status, current_step, version, drafter_id, file_group_id,
-            submitted_at, completed_at, created_at, updated_at
+            doc_no, title, content, status, doc_class, current_step, version, drafter_id, file_group_id,
+            scheduled_submit_at, submitted_at, completed_at, created_at, updated_at
         ) VALUES (
-            #{docNo}, #{title}, #{content}, #{status}, #{currentStep}, #{version}, #{drafterId}, #{fileGroupId},
-            #{submittedAt}, #{completedAt}, #{createdAt}, #{updatedAt}
+            #{docNo}, #{title}, #{content}, #{status}, #{docClass}, #{currentStep}, #{version}, #{drafterId}, #{fileGroupId},
+            #{scheduledSubmitAt}, #{submittedAt}, #{completedAt}, #{createdAt}, #{updatedAt}
         )
     </insert>
 
@@ -34,9 +36,11 @@
             title = #{title},
             content = #{content},
             status = #{status},
+            doc_class = #{docClass},
             current_step = #{currentStep},
             version = #{version},
             file_group_id = #{fileGroupId},
+            scheduled_submit_at = #{scheduledSubmitAt},
             submitted_at = #{submittedAt},
             completed_at = #{completedAt},
             updated_at = #{updatedAt}
@@ -51,13 +55,22 @@
         SELECT * FROM pjt_approval_documents WHERE id = #{id}
     </select>
 
+    <select id="findDueScheduled" resultMap="DocMap">
+        SELECT * FROM pjt_approval_documents
+        WHERE status = 'SCHEDULED'
+          AND scheduled_submit_at IS NOT NULL
+          AND scheduled_submit_at &lt;= #{now}
+        ORDER BY scheduled_submit_at ASC, id ASC
+        LIMIT #{limit}
+    </select>
+
     <sql id="boxWhere">
         <where>
             <choose>
-                <when test="box == 'drafts'">
+                <when test="box == 'submitted' or box == 'drafts'">
                     AND drafter_id = #{viewerId}
                 </when>
-                <when test="box == 'inbox'">
+                <when test="box == 'pending' or box == 'inbox'">
                     AND id IN (
                         SELECT document_id FROM pjt_approval_lines
                         WHERE approver_id = #{viewerId}
@@ -67,6 +80,31 @@
                             (line_type IN ('APPROVE', 'AGREE') AND active = TRUE)
                             OR line_type = 'POST'
                           )
+                    )
+                </when>
+                <when test="box == 'held'">
+                    AND id IN (
+                        SELECT document_id FROM pjt_approval_lines
+                        WHERE approver_id = #{viewerId}
+                          AND status = 'HELD'
+                          AND line_type IN ('APPROVE', 'AGREE', 'POST')
+                    )
+                </when>
+                <when test="box == 'upcoming'">
+                    AND id IN (
+                        SELECT document_id FROM pjt_approval_lines
+                        WHERE approver_id = #{viewerId}
+                          AND status = 'WAITING'
+                          AND line_type IN ('APPROVE', 'AGREE')
+                    )
+                    AND status = 'IN_PROGRESS'
+                </when>
+                <when test="box == 'completed'">
+                    AND id IN (
+                        SELECT document_id FROM pjt_approval_lines
+                        WHERE approver_id = #{viewerId}
+                          AND status = 'APPROVED'
+                          AND line_type IN ('APPROVE', 'AGREE', 'POST')
                     )
                 </when>
                 <when test="box == 'notices'">

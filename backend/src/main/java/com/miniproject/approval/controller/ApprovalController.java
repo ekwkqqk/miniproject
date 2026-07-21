@@ -3,6 +3,7 @@ package com.miniproject.approval.controller;
 import com.miniproject.approval.dto.ApprovalActionRequest;
 import com.miniproject.approval.dto.ApprovalDocumentRequest;
 import com.miniproject.approval.dto.ApprovalDocumentResponse;
+import com.miniproject.approval.dto.ApprovalScheduleRequest;
 import com.miniproject.approval.service.ApprovalService;
 import com.miniproject.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -48,7 +49,7 @@ public class ApprovalController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ApiResponse.success(approvalService.search(email, "inbox", null, keyword, page, size));
+        return ApiResponse.success(approvalService.search(email, "pending", null, keyword, page, size));
     }
 
     @GetMapping("/notices")
@@ -109,12 +110,39 @@ public class ApprovalController {
         return ApiResponse.success(approvalService.submit(email, id), "상신되었습니다.");
     }
 
+    @PostMapping("/documents/{id}/schedule-submit")
+    public ApiResponse<ApprovalDocumentResponse> scheduleSubmit(
+            @AuthenticationPrincipal String email,
+            @PathVariable Long id,
+            @Valid @RequestBody ApprovalScheduleRequest request
+    ) {
+        return ApiResponse.success(approvalService.scheduleSubmit(email, id, request), "예약 상신되었습니다.");
+    }
+
     @PostMapping("/documents/{id}/recall")
     public ApiResponse<ApprovalDocumentResponse> recall(
             @AuthenticationPrincipal String email,
             @PathVariable Long id
     ) {
         return ApiResponse.success(approvalService.recall(email, id), "회수되었습니다.");
+    }
+
+    @PostMapping("/documents/{id}/hold")
+    public ApiResponse<ApprovalDocumentResponse> hold(
+            @AuthenticationPrincipal String email,
+            @PathVariable Long id,
+            @Valid @RequestBody ApprovalActionRequest request
+    ) {
+        return ApiResponse.success(approvalService.hold(email, id, request), "보류되었습니다.");
+    }
+
+    @PostMapping("/documents/{id}/resume")
+    public ApiResponse<ApprovalDocumentResponse> resume(
+            @AuthenticationPrincipal String email,
+            @PathVariable Long id,
+            @Valid @RequestBody ApprovalActionRequest request
+    ) {
+        return ApiResponse.success(approvalService.resume(email, id, request), "보류가 해제되었습니다.");
     }
 
     @PostMapping("/documents/{id}/approve")

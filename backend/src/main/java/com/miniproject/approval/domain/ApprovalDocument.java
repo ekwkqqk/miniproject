@@ -9,10 +9,12 @@ public class ApprovalDocument {
     private String title;
     private String content;
     private String status;
+    private String docClass;
     private Integer currentStep;
     private int version;
     private Long drafterId;
     private String fileGroupId;
+    private LocalDateTime scheduledSubmitAt;
     private LocalDateTime submittedAt;
     private LocalDateTime completedAt;
     private LocalDateTime createdAt;
@@ -28,6 +30,8 @@ public class ApprovalDocument {
     public void setContent(String content) { this.content = content; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getDocClass() { return docClass; }
+    public void setDocClass(String docClass) { this.docClass = docClass; }
     public Integer getCurrentStep() { return currentStep; }
     public void setCurrentStep(Integer currentStep) { this.currentStep = currentStep; }
     public int getVersion() { return version; }
@@ -36,6 +40,8 @@ public class ApprovalDocument {
     public void setDrafterId(Long drafterId) { this.drafterId = drafterId; }
     public String getFileGroupId() { return fileGroupId; }
     public void setFileGroupId(String fileGroupId) { this.fileGroupId = fileGroupId; }
+    public LocalDateTime getScheduledSubmitAt() { return scheduledSubmitAt; }
+    public void setScheduledSubmitAt(LocalDateTime scheduledSubmitAt) { this.scheduledSubmitAt = scheduledSubmitAt; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
     public LocalDateTime getCompletedAt() { return completedAt; }

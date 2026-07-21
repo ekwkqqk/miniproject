@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,12 @@ public class ApprovalDocumentRequest {
 
     private String fileGroupId;
 
+    /** GENERAL / CONFIDENTIAL / TOP_SECRET / URGENT */
+    private String docClass;
+
+    /** 예약 상신 시각 (저장만, 실제 예약은 schedule-submit API) */
+    private LocalDateTime scheduledSubmitAt;
+
     @Valid
     private List<ApprovalLineRequest> lines = new ArrayList<>();
 
@@ -26,6 +33,10 @@ public class ApprovalDocumentRequest {
     public void setContent(String content) { this.content = content; }
     public String getFileGroupId() { return fileGroupId; }
     public void setFileGroupId(String fileGroupId) { this.fileGroupId = fileGroupId; }
+    public String getDocClass() { return docClass; }
+    public void setDocClass(String docClass) { this.docClass = docClass; }
+    public LocalDateTime getScheduledSubmitAt() { return scheduledSubmitAt; }
+    public void setScheduledSubmitAt(LocalDateTime scheduledSubmitAt) { this.scheduledSubmitAt = scheduledSubmitAt; }
     public List<ApprovalLineRequest> getLines() { return lines; }
     public void setLines(List<ApprovalLineRequest> lines) { this.lines = lines; }
 

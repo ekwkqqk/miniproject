@@ -125,10 +125,12 @@ public class I18nDataInitializer {
         ensureMessage(menu, "demoPopup", "팝업 테스트", ko, "팝업 테스트", en, "Popup");
         ensureMessage(menu, "demoUpload", "파일 첨부", ko, "파일 첨부", en, "File Attach");
         ensureMessage(menu, "approval", "결재", ko, "결재", en, "Approval");
-        ensureMessage(menu, "approvalInbox", "대기함", ko, "대기함", en, "Inbox");
+        ensureMessage(menu, "approvalSubmitted", "상신함", ko, "상신함", en, "Submitted");
+        ensureMessage(menu, "approvalHeld", "보류함", ko, "보류함", en, "On Hold");
+        ensureMessage(menu, "approvalPending", "미결함", ko, "미결함", en, "Pending");
+        ensureMessage(menu, "approvalUpcoming", "예결함", ko, "예결함", en, "Upcoming");
+        ensureMessage(menu, "approvalCompleted", "기결함", ko, "기결함", en, "Completed");
         ensureMessage(menu, "approvalNotices", "통보함", ko, "통보함", en, "Notices");
-        ensureMessage(menu, "approvalDrafts", "기안함", ko, "기안함", en, "Drafts");
-        ensureMessage(menu, "approvalDocuments", "문서함", ko, "문서함", en, "Documents");
         ensureMessage(menu, "approvalNew", "기안 작성", ko, "기안 작성", en, "New Draft");
     }
 
@@ -261,10 +263,12 @@ public class I18nDataInitializer {
         bindMenuByUrl("/demo/edit", "menu.demoEdit");
         bindMenuByUrl("/demo/popup", "menu.demoPopup");
         bindMenuByUrl("/demo/upload", "menu.demoUpload");
-        bindMenuByUrl("/approval/inbox", "menu.approvalInbox");
+        bindMenuByUrl("/approval/submitted", "menu.approvalSubmitted");
+        bindMenuByUrl("/approval/held", "menu.approvalHeld");
+        bindMenuByUrl("/approval/pending", "menu.approvalPending");
+        bindMenuByUrl("/approval/upcoming", "menu.approvalUpcoming");
+        bindMenuByUrl("/approval/completed", "menu.approvalCompleted");
         bindMenuByUrl("/approval/notices", "menu.approvalNotices");
-        bindMenuByUrl("/approval/drafts", "menu.approvalDrafts");
-        bindMenuByUrl("/approval/documents", "menu.approvalDocuments");
         bindMenuByUrl("/approval/documents/new", "menu.approvalNew");
 
         bindMenuFolderByName("시스템 관리", "menu.system");

@@ -14,11 +14,13 @@ public class ApprovalDocumentResponse {
     private String title;
     private String content;
     private String status;
+    private String docClass;
     private Integer currentStep;
     private int version;
     private Long drafterId;
     private String drafterName;
     private String fileGroupId;
+    private LocalDateTime scheduledSubmitAt;
     private LocalDateTime submittedAt;
     private LocalDateTime completedAt;
     private LocalDateTime createdAt;
@@ -35,11 +37,13 @@ public class ApprovalDocumentResponse {
         r.title = doc.getTitle();
         r.content = doc.getContent();
         r.status = doc.getStatus();
+        r.docClass = doc.getDocClass();
         r.currentStep = doc.getCurrentStep();
         r.version = doc.getVersion();
         r.drafterId = doc.getDrafterId();
         r.drafterName = drafterName;
         r.fileGroupId = doc.getFileGroupId();
+        r.scheduledSubmitAt = doc.getScheduledSubmitAt();
         r.submittedAt = doc.getSubmittedAt();
         r.completedAt = doc.getCompletedAt();
         r.createdAt = doc.getCreatedAt();
@@ -83,11 +87,13 @@ public class ApprovalDocumentResponse {
     public String getTitle() { return title; }
     public String getContent() { return content; }
     public String getStatus() { return status; }
+    public String getDocClass() { return docClass; }
     public Integer getCurrentStep() { return currentStep; }
     public int getVersion() { return version; }
     public Long getDrafterId() { return drafterId; }
     public String getDrafterName() { return drafterName; }
     public String getFileGroupId() { return fileGroupId; }
+    public LocalDateTime getScheduledSubmitAt() { return scheduledSubmitAt; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
     public LocalDateTime getCompletedAt() { return completedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }

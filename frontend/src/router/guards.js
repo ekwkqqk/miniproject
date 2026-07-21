@@ -17,6 +17,16 @@ async function ensureI18nLoaded() {
   }
 }
 
+/** requiresMenu: 현재 path 또는 meta.menuAnyOf 중 하나라도 메뉴 권한이면 통과 */
+function hasMenuAccess(menuStore, to) {
+  if (menuStore.canAccess(to.path)) return true
+  const anyOf = to.meta.menuAnyOf
+  if (Array.isArray(anyOf) && anyOf.some((url) => menuStore.canAccess(url))) {
+    return true
+  }
+  return false
+}
+
 export async function setupRouterGuards(router) {
   router.beforeEach(async (to) => {
     const authStore = useAuthStore()
@@ -58,7 +68,7 @@ export async function setupRouterGuards(router) {
       await ensureI18nLoaded()
     }
 
-    if (to.meta.requiresMenu && !menuStore.canAccess(to.path)) {
+    if (to.meta.requiresMenu && !hasMenuAccess(menuStore, to)) {
       return { name: 'forbidden' }
     }
 

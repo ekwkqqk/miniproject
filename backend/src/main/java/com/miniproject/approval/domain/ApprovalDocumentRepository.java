@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,4 +38,6 @@ public interface ApprovalDocumentRepository {
     int nextDocSeq(@Param("seqDate") LocalDate seqDate);
 
     int upsertDocSeq(@Param("seqDate") LocalDate seqDate);
+
+    List<ApprovalDocument> findDueScheduled(@Param("now") LocalDateTime now, @Param("limit") int limit);
 }

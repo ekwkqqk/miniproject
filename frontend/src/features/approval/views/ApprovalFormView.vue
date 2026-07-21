@@ -6,7 +6,7 @@ import { Close } from '@element-plus/icons-vue'
 import PageLayout from '@/shared/components/PageLayout.vue'
 import ContentPanel from '@/shared/components/ContentPanel.vue'
 import FileAttachment from '@/shared/components/FileAttachment.vue'
-import { lineTypeLabel } from '@/features/approval/data'
+import { DOC_CLASSES, lineTypeLabel } from '@/features/approval/data'
 import * as approvalApi from '@/features/approval/api'
 import { useApprovalBadgeStore } from '@/features/approval/badgeStore'
 
@@ -23,6 +23,8 @@ const form = reactive({
   title: '',
   content: '',
   fileGroupId: null,
+  docClass: 'GENERAL',
+  scheduledSubmitAt: null,
   lines: [],
 })
 const files = ref([])
@@ -196,6 +198,8 @@ function buildPayload() {
   return {
     title: form.title,
     content: form.content,
+    docClass: form.docClass || 'GENERAL',
+    scheduledSubmitAt: form.scheduledSubmitAt || null,
     fileGroupId: form.fileGroupId != null ? String(form.fileGroupId) : null,
     lines: form.lines.map((l, i) => ({
       stepOrder: Number(l.stepOrder) || i + 1,
@@ -232,13 +236,15 @@ async function load() {
     const { data } = await approvalApi.getDocument(docId.value)
     if (!data.success) return
     const d = data.data
-    if (d.status !== 'DRAFT') {
-      ElMessage.warning('임시저장 문서만 수정할 수 있습니다.')
+    if (d.status !== 'DRAFT' && d.status !== 'SCHEDULED') {
+      ElMessage.warning('임시저장/예약 문서만 수정할 수 있습니다.')
       router.replace({ name: 'approval-detail', params: { id: d.id } })
       return
     }
     form.title = d.title
     form.content = d.content
+    form.docClass = d.docClass || 'GENERAL'
+    form.scheduledSubmitAt = d.scheduledSubmitAt || null
     form.fileGroupId = d.fileGroupId
     form.lines = (d.lines || []).map((l) => ({
       key: nextKey(),
@@ -262,33 +268,63 @@ async function load() {
   }
 }
 
-async function save(submitAfter = false) {
+async function persistDraft() {
+  await ensureFilesUploaded()
+  const payload = buildPayload()
+  let id = docId.value
+  if (isEdit.value) {
+    await approvalApi.updateDocument(id, payload)
+  } else {
+    const { data } = await approvalApi.createDocument(payload)
+    id = data.data.id
+  }
+  return id
+}
+
+function validateBeforeSubmit() {
   if (!form.title?.trim() || !form.content?.trim()) {
     ElMessage.warning('제목과 내용을 입력하세요.')
-    return
+    return false
   }
   if (!form.lines.length) {
     ElMessage.warning('결재선을 추가하세요.')
+    return false
+  }
+  if (form.lines.some((l) => !l.approverId)) {
+    ElMessage.warning('결재선 대상자를 모두 지정하세요.')
+    return false
+  }
+  if (!form.lines.some((l) => isBlocking(l.lineType))) {
+    ElMessage.warning('상신하려면 결재 또는 합의 라인이 필요합니다.')
+    return false
+  }
+  return true
+}
+
+async function save(mode = 'draft') {
+  if (mode === 'draft') {
+    if (!form.title?.trim() || !form.content?.trim()) {
+      ElMessage.warning('제목과 내용을 입력하세요.')
+      return
+    }
+  } else if (!validateBeforeSubmit()) {
     return
   }
-  if (submitAfter && !form.lines.some((l) => isBlocking(l.lineType))) {
-    ElMessage.warning('상신하려면 결재 또는 합의 라인이 필요합니다.')
+  if (mode === 'schedule' && !form.scheduledSubmitAt) {
+    ElMessage.warning('예약 상신 날짜/시간을 지정하세요.')
     return
   }
   saving.value = true
   try {
-    await ensureFilesUploaded()
-    const payload = buildPayload()
-    let id = docId.value
-    if (isEdit.value) {
-      await approvalApi.updateDocument(id, payload)
-    } else {
-      const { data } = await approvalApi.createDocument(payload)
-      id = data.data.id
-    }
-    if (submitAfter) {
+    const id = await persistDraft()
+    if (mode === 'submit') {
       await approvalApi.submitDocument(id)
       ElMessage.success('상신되었습니다.')
+      badgeStore.refresh()
+      router.push({ name: 'approval-detail', params: { id } })
+    } else if (mode === 'schedule') {
+      await approvalApi.scheduleSubmitDocument(id, { scheduledSubmitAt: form.scheduledSubmitAt })
+      ElMessage.success('예약 상신되었습니다.')
       badgeStore.refresh()
       router.push({ name: 'approval-detail', params: { id } })
     } else {
@@ -319,6 +355,29 @@ onMounted(async () => {
         <el-form-item label="제목" required>
           <el-input v-model="form.title" maxlength="300" show-word-limit placeholder="제목을 입력하세요" />
         </el-form-item>
+
+        <div class="options-row">
+          <el-form-item label="결재 종류" required class="option-item">
+            <el-select v-model="form.docClass" style="width: 100%">
+              <el-option
+                v-for="c in DOC_CLASSES"
+                :key="c.value"
+                :label="c.label"
+                :value="c.value"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="예약 상신" class="option-item">
+            <el-date-picker
+              v-model="form.scheduledSubmitAt"
+              type="datetime"
+              placeholder="예약 날짜/시간"
+              format="YYYY-MM-DD HH:mm"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </div>
 
         <el-form-item label="결재선" required>
           <div class="line-builder">
@@ -411,13 +470,15 @@ onMounted(async () => {
           />
         </el-form-item>
 
-        <el-form-item label="내용" required>
+        <el-form-item label="내용" required class="content-item">
           <el-input
             v-model="form.content"
             type="textarea"
-            :rows="10"
+            :rows="16"
             maxlength="5000"
             show-word-limit
+            resize="vertical"
+            class="content-textarea"
             placeholder="내용을 입력하세요"
           />
         </el-form-item>
@@ -426,15 +487,38 @@ onMounted(async () => {
 
     <div class="actions">
       <el-button @click="router.back()">취소</el-button>
-      <el-button :loading="saving" @click="save(false)">임시저장</el-button>
-      <el-button type="primary" :loading="saving" @click="save(true)">상신</el-button>
+      <el-button :loading="saving" @click="save('draft')">임시저장</el-button>
+      <el-button :loading="saving" @click="save('schedule')">예약 상신</el-button>
+      <el-button type="primary" :loading="saving" @click="save('submit')">상신</el-button>
     </div>
   </PageLayout>
 </template>
 
 <style scoped>
+.page-layout :deep(.content-panel),
+.page-layout :deep(.el-card),
 .draft-form {
-  max-width: 960px;
+  width: 100%;
+  max-width: none;
+}
+
+.content-item {
+  width: 100%;
+}
+
+.content-textarea :deep(.el-textarea__inner) {
+  width: 100%;
+  min-height: 280px;
+}
+
+.options-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.option-item {
+  margin-bottom: 18px;
 }
 
 .line-builder {

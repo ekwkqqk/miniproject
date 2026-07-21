@@ -8,7 +8,7 @@ import ContentPanel from '@/shared/components/ContentPanel.vue'
 import FileAttachment from '@/shared/components/FileAttachment.vue'
 import { useAuthStore } from '@/features/auth/store'
 import { useApprovalBadgeStore } from '@/features/approval/badgeStore'
-import { LINE_STATUS, lineTypeLabel, statusMeta } from '@/features/approval/data'
+import { LINE_STATUS, docClassLabel, lineTypeLabel, statusMeta } from '@/features/approval/data'
 import * as approvalApi from '@/features/approval/api'
 import { formatDateTime } from '@/shared/utils/date'
 
@@ -34,8 +34,17 @@ const myPendingLine = computed(() => {
   })
 })
 
-const canEditDraft = computed(() => doc.value?.status === 'DRAFT' && doc.value?.drafterId === myId.value)
-const canRecall = computed(() => doc.value?.status === 'IN_PROGRESS' && doc.value?.drafterId === myId.value)
+const myHeldLine = computed(() => {
+  if (!doc.value || !myId.value) return null
+  return (doc.value.lines || []).find((l) => l.approverId === myId.value && l.status === 'HELD')
+})
+
+const canEditDraft = computed(() =>
+  ['DRAFT', 'SCHEDULED'].includes(doc.value?.status) && doc.value?.drafterId === myId.value,
+)
+const canRecall = computed(() =>
+  ['IN_PROGRESS', 'SCHEDULED'].includes(doc.value?.status) && doc.value?.drafterId === myId.value,
+)
 const canNewDraft = computed(() => doc.value?.status === 'REJECTED' && doc.value?.drafterId === myId.value)
 
 async function load() {
@@ -123,10 +132,15 @@ async function doAck() {
 }
 
 async function doRecall() {
+  const wasScheduled = doc.value?.status === 'SCHEDULED'
   try {
-    await confirmDialog('문서를 회수하시겠습니까?', '회수', { type: 'warning' })
+    await confirmDialog(
+      wasScheduled ? '예약 상신을 취소하시겠습니까?' : '문서를 회수하시겠습니까?',
+      wasScheduled ? '예약 취소' : '회수',
+      { type: 'warning' },
+    )
     await approvalApi.recallDocument(doc.value.id)
-    ElMessage.success('회수되었습니다.')
+    ElMessage.success(wasScheduled ? '예약이 취소되었습니다.' : '회수되었습니다.')
     await afterAction()
   } catch (e) {
     if (e !== 'cancel') ElMessage.error(e.response?.data?.message || e.message)
@@ -143,6 +157,34 @@ async function doSubmit() {
   }
 }
 
+async function doHold() {
+  if (!myPendingLine.value || myPendingLine.value.lineType === 'NOTIFY') return
+  acting.value = true
+  try {
+    await approvalApi.holdDocument(doc.value.id, { lineId: myPendingLine.value.id, comment: comment.value || null })
+    ElMessage.success('보류되었습니다.')
+    await afterAction()
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || e.message)
+  } finally {
+    acting.value = false
+  }
+}
+
+async function doResume() {
+  if (!myHeldLine.value) return
+  acting.value = true
+  try {
+    await approvalApi.resumeDocument(doc.value.id, { lineId: myHeldLine.value.id })
+    ElMessage.success('보류가 해제되었습니다.')
+    await afterAction()
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || e.message)
+  } finally {
+    acting.value = false
+  }
+}
+
 onMounted(async () => {
   await ensureMe()
   await load()
@@ -155,15 +197,18 @@ onMounted(async () => {
       <ContentPanel :title="doc.title">
         <template #header-actions>
           <el-tag :type="statusMeta(doc.status).type">{{ statusMeta(doc.status).label }}</el-tag>
+          <el-tag type="info">{{ docClassLabel(doc.docClass) }}</el-tag>
           <el-button v-if="canEditDraft" @click="router.push({ name: 'approval-edit', params: { id: doc.id } })">수정</el-button>
           <el-button v-if="canEditDraft" type="primary" @click="doSubmit">상신</el-button>
-          <el-button v-if="canRecall" @click="doRecall">회수</el-button>
+          <el-button v-if="canRecall" @click="doRecall">{{ doc.status === 'SCHEDULED' ? '예약 취소' : '회수' }}</el-button>
           <el-button v-if="canNewDraft" type="primary" @click="router.push({ name: 'approval-new' })">새 기안</el-button>
         </template>
 
         <dl class="meta">
           <div><dt>문서번호</dt><dd>{{ doc.docNo }}</dd></div>
           <div><dt>기안자</dt><dd>{{ doc.drafterName }}</dd></div>
+          <div><dt>결재 종류</dt><dd>{{ docClassLabel(doc.docClass) }}</dd></div>
+          <div><dt>예약 상신</dt><dd>{{ doc.scheduledSubmitAt ? formatDateTime(doc.scheduledSubmitAt) : '-' }}</dd></div>
           <div><dt>상신일</dt><dd>{{ doc.submittedAt ? formatDateTime(doc.submittedAt) : '-' }}</dd></div>
         </dl>
         <div class="content">{{ doc.content }}</div>
@@ -195,13 +240,17 @@ onMounted(async () => {
         </el-table>
       </ContentPanel>
 
-      <ContentPanel v-if="myPendingLine" title="처리">
+      <ContentPanel v-if="myPendingLine || myHeldLine" title="처리">
         <el-input v-model="comment" type="textarea" :rows="3" placeholder="의견 / 반려 사유" />
         <div class="actions">
-          <template v-if="myPendingLine.lineType === 'NOTIFY'">
+          <template v-if="myHeldLine">
+            <el-button type="primary" :loading="acting" @click="doResume">보류 해제</el-button>
+          </template>
+          <template v-else-if="myPendingLine?.lineType === 'NOTIFY'">
             <el-button type="primary" :loading="acting" @click="doAck">확인</el-button>
           </template>
-          <template v-else>
+          <template v-else-if="myPendingLine">
+            <el-button :loading="acting" @click="doHold">보류</el-button>
             <el-button type="danger" :loading="acting" @click="doReject">반려</el-button>
             <el-button type="primary" :loading="acting" @click="doApprove">승인</el-button>
           </template>

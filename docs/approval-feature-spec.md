@@ -1,9 +1,9 @@
-# 결재 기능 정의서 (v1.1)
+# 결재 기능 정의서 (v1.2)
 
 | 항목 | 내용 |
 |------|------|
-| 문서 버전 | 1.1 |
-| 작성일 | 2026-07-20 |
+| 문서 버전 | 1.2 |
+| 작성일 | 2026-07-21 |
 | 대상 시스템 | miniproject (Vue 3 + Spring Boot) |
 | 상태 | **확정** (구현 기준) |
 
@@ -29,7 +29,11 @@
 | 후결 반려 | 문서 **`REJECTED`** (이미 승인 완료여도 전환) |
 | 통보 시점 | **상신 즉시** |
 | 통보 확인 | **수동 확인(ACK)** |
-| 결재·합의 순서 변경 | **기안 작성(DRAFT) UI**에서 결재자·합의자 순서 변경 |
+| 결재·합의 순서 변경 | **기안 작성(DRAFT/SCHEDULED) UI**에서 결재자·합의자 순서 변경 |
+| 조회함 구성 | **상신함 / 보류함 / 미결함 / 예결함 / 기결함 / 통보함** (+ 기안 작성) |
+| 결재 종류(`doc_class`) | **일반 / 대외비 / 극비 / 긴급** |
+| 예약 상신 | **날짜+시간** 지정 → `SCHEDULED` → 스케줄러가 시각에 상신 |
+| 보류 | 내 PENDING 라인 → `HELD` (보류함). 해제 시 다시 PENDING |
 ---
 
 ## 2. 1차 범위 (MVP+)
@@ -48,15 +52,18 @@
 | A-08 | 후결 | 유형 `POST`. **진행을 막지 않음**. 상신 직후 대기함 노출 |
 | A-08b | 통보 | 유형 `NOTIFY`. **진행 비차단·반려 없음**. 상신 즉시 통보, 확인(ACK) |
 | A-09 | 결재·합의 순서 변경 | **기안 작성(DRAFT) 시**에만 결재자·합의자 순서를 변경(↑↓/드래그). 상신 후에는 변경 불가 |
-| A-10 | 상신 | DRAFT → IN_PROGRESS |
+| A-10 | 상신 | DRAFT/SCHEDULED → IN_PROGRESS |
+| A-10b | 예약 상신 | 예약 시각 지정 → `SCHEDULED` → 도래 시 자동 상신 |
 | A-11 | 승인 | 내 차례 결재/합의/후결만 |
 | A-12 | 반려 | 결재/합의/후결 → `REJECTED`. 이후 **새 문서로만** 재기안 |
 | A-12b | 통보 확인 | `ACKNOWLEDGED` |
-| A-13 | 회수 | 처리 완료 라인 0건일 때만 → DRAFT |
-| A-14 | 조회함 | 대기함 / 기안함 / 통보함 / 관련 문서함 |
+| A-12c | 보류/해제 | PENDING → HELD → PENDING |
+| A-13 | 회수 | 처리 완료 라인 0건일 때만 → DRAFT. `SCHEDULED`는 예약 취소 → DRAFT |
+| A-14 | 조회함 | 상신함 / 보류함 / 미결함 / 예결함 / 기결함 / 통보함 |
+| A-14b | 결재 종류 | 일반·대외비·극비·긴급 |
 | A-15 | 상세 조회 | 본문, 첨부, 결재선, 이력 |
-| A-16 | 권한 | 메뉴 권한 + 문서 단위 접근 제어 |
-| A-17 | 알림(최소) | 상신·내 차례·반려·완료·후결·통보 뱃지 |
+| A-16 | 권한 | 메뉴 권한(`menuAnyOf`로 상세/작성 공유) + 문서 단위 접근 제어 |
+| A-17 | 알림(최소) | 미결·보류·예결·통보 뱃지 |
 
 ### 2.2 제외 (후속)
 
@@ -159,26 +166,41 @@
 
 ```text
 DRAFT         임시저장
+SCHEDULED     예약 상신 대기 (시각 도래 시 자동 상신)
 IN_PROGRESS   결재/합의 진행 중 (후결·통보 미완과 공존 가능)
 APPROVED      차단 단계 모두 승인 — 후결/통보 미완 가능
 REJECTED      반려 확정. **재상신 불가** → 필요 시 새 기안
 ```
 
-UI 보조 표시(상태 필드 아님): `후결 대기 N건`, `통보 미확인 N건` 뱃지.
+라인 상태 추가: `HELD`(보류). UI 뱃지: 미결·보류·예결·통보.
+
+### 결재 종류 (`doc_class`)
+
+| 코드 | 화면 |
+|------|------|
+| `GENERAL` | 일반 |
+| `CONFIDENTIAL` | 대외비 |
+| `TOP_SECRET` | 극비 |
+| `URGENT` | 긴급 |
 
 ### 상태 전이
 
 | From | To | 행위 | 조건 |
 |------|-----|------|------|
 | — | DRAFT | 저장 | 기안자 |
-| DRAFT | IN_PROGRESS | 상신 | 결재선에 APPROVE 또는 AGREE ≥ 1 (NOTIFY만으로 상신 불가) |
-| DRAFT | 삭제 | 삭제 | 기안자 |
+| DRAFT / SCHEDULED | SCHEDULED | 예약 상신 | 미래 시각, 결재선 유효 |
+| DRAFT / SCHEDULED | IN_PROGRESS | 상신(즉시) | APPROVE 또는 AGREE ≥ 1 |
+| SCHEDULED | DRAFT | 예약 취소(회수) | 기안자 |
+| SCHEDULED | IN_PROGRESS | 스케줄 실행 | `scheduled_submit_at` ≤ now |
+| DRAFT / SCHEDULED | 삭제 | 삭제 | 기안자 |
 | IN_PROGRESS | IN_PROGRESS | 승인 | 활성 라인; 단계 미완료면 상태 유지 |
 | IN_PROGRESS | APPROVED | 승인 | 모든 APPROVE/AGREE 완료 |
 | IN_PROGRESS / APPROVED | REJECTED | 반려 | 내 PENDING 라인(결재/합의/후결) |
 | IN_PROGRESS | DRAFT | 회수 | 처리 완료 라인 0건 |
 | APPROVED | APPROVED | 후결 승인 | POST 라인만 갱신 |
 | * | * (문서 상태 불변) | 통보 확인 | NOTIFY → `ACKNOWLEDGED` |
+| (라인) PENDING | HELD | 보류 | 내 결재/합의/후결 |
+| (라인) HELD | PENDING | 보류 해제 | 내 보류 라인 |
 
 ---
 
@@ -191,9 +213,7 @@ UI 보조 표시(상태 필드 아님): `후결 대기 N건`, `통보 미확인 
 4. 차단 라인 전부 `APPROVED` → 문서 `APPROVED`.
 5. APPROVE/AGREE/POST 의 PENDING에서 반려 → 문서 `REJECTED`, 나머지 PENDING → `SKIPPED`.  
    NOTIFY는 반려 API 호출 불가.
-6. 함 구분:  
-   - **대기함:** APPROVE/AGREE 활성 PENDING, 또는 POST PENDING  
-   - **통보함:** NOTIFY + PENDING(미확인)
+6. 함 구분: 아래 **8절** 표 참고.
 
 ```mermaid
 flowchart TD
@@ -215,21 +235,27 @@ flowchart TD
 
 ## 8. 화면 구성
 
-| 화면 | 경로(안) | 설명 |
-|------|----------|------|
-| 대기함 | `/approval/inbox` | 내 차례(결재/합의/후결) |
-| 통보함 | `/approval/notices` | 내게 온 통보(미확인/전체) |
-| 기안함 | `/approval/drafts` | DRAFT + 내가 올린 문서 |
-| 문서함 | `/approval/documents` | 관련 문서 검색 |
-| 작성/수정 | `/approval/documents/new`, `.../:id/edit` | 제목·내용·첨부 + 결재선(결재/합의 **순서 변경**) |
-| 상세 | `/approval/documents/:id` | 조회·승인/반려/확인 (결재선 수정 없음) |
+| 화면 | 경로 | box / 설명 |
+|------|------|------------|
+| 상신함 | `/approval/submitted` | 내가 기안한 문서 (DRAFT·SCHEDULED·진행·완료 등) |
+| 보류함 | `/approval/held` | 내 라인 `HELD` |
+| 미결함 | `/approval/pending` | 내 APPROVE/AGREE(활성) 또는 POST `PENDING` |
+| 예결함 | `/approval/upcoming` | `IN_PROGRESS` 이고 내 APPROVE/AGREE가 `WAITING` |
+| 기결함 | `/approval/completed` | 내 라인 `APPROVED`(결재/합의/후결) |
+| 통보함 | `/approval/notices` | 내 NOTIFY (미확인/확인/전체) |
+| 기안 작성 | `/approval/documents/new` | 신규 기안 |
+| 수정 | `/approval/documents/:id/edit` | DRAFT·SCHEDULED 수정 |
+| 상세 | `/approval/documents/:id` | 조회·승인/반려/보류/확인 |
+
+레거시 리다이렉트: `/approval/inbox` → 미결함, `/approval/drafts`·`/approval/documents` → 상신함.
+
+권한: 작성·수정·상세는 결재 메뉴 중 **하나라도** 있으면 접근 가능(`menuAnyOf`).
 
 ### 결재선 빌더 UX (기안 작성 시)
 
-- 행: 유형(결재/합의/후결/통보) | 사용자 | **순서(↑↓/드래그)** | 병렬 묶기
-- 결재·합의 행의 순서가 곧 처리 순서
-- 같은 순번으로 묶으면 병렬
-- 후결·통보: “진행 비차단” 안내
+- 유형 선택(결재/합의/통보) 후 사용자 검색·추가. Ctrl+복수선택 → 병렬/해제
+- 결재 종류·예약 상신(날짜·시간)·제목·첨부·내용 — **컨텐츠 영역 전체 너비**
+- 자기결재 불가 안내
 
 ---
 
@@ -243,15 +269,17 @@ flowchart TD
 | doc_no | `AP-YYYYMMDD-####` |
 | title | 제목 (필수) |
 | content | 내용/본문 (텍스트, 필수) |
-| status | DRAFT / IN_PROGRESS / APPROVED / REJECTED |
+| status | DRAFT / SCHEDULED / IN_PROGRESS / APPROVED / REJECTED |
+| doc_class | GENERAL / CONFIDENTIAL / TOP_SECRET / URGENT |
+| scheduled_submit_at | 예약 상신 시각 (SCHEDULED일 때) |
 | current_step | 현재 활성 차단 단계 `step_order` (없으면 null) |
 | version | 낙관적 잠금 |
 | drafter_id | |
+| file_group_id | 첨부 그룹 |
 | submitted_at, completed_at | |
 | created_at, updated_at | |
 
-> `doc_type` 컬럼은 1차에 두지 않거나 `GENERAL` 고정. 유형별 폼은 후속.  
-> 첨부는 기존 파일 모듈 `ref_type=APPROVAL_DOCUMENT` 로 연결 (**1차 포함**).
+> 유형별 전용 폼은 후속. 첨부는 파일 모듈 `file_group_id` 연동.
 
 ### 9.2 `pjt_approval_lines`
 
@@ -263,7 +291,7 @@ flowchart TD
 | sort_in_step | 단계 내 표시 순서 |
 | line_type | `APPROVE` / `AGREE` / `POST` / `NOTIFY` |
 | approver_id | 대상 사용자 (통보 수신자 포함) |
-| status | WAITING / PENDING / APPROVED / REJECTED / ACKNOWLEDGED / SKIPPED |
+| status | WAITING / PENDING / HELD / APPROVED / REJECTED / ACKNOWLEDGED / SKIPPED |
 | acted_at, comment | |
 | active | 차단 유형의 현재 처리 가능 여부 |
 
@@ -276,24 +304,29 @@ flowchart TD
 
 | action 예 |
 |-----------|
-| CREATE, UPDATE, SUBMIT, APPROVE, REJECT, ACK, RECALL, DELETE |
+| CREATE, UPDATE, SUBMIT, SCHEDULE, APPROVE, REJECT, ACK, HOLD, RESUME, RECALL, DELETE |
 
 ---
 
-## 10. API (초안)
+## 10. API
 
 | Method | Path | 설명 |
 |--------|------|------|
-| GET/POST/PUT/DELETE | `/api/approval/documents` … | 목록·생성·수정·삭제·상세 |
-| PUT | `/api/approval/documents/{id}` | DRAFT만: 제목·내용·**결재선(순서 포함)** 저장 |
-| PUT | `/api/approval/documents/{id}/lines` | DRAFT만: 결재선 전체 치환(결재/합의 순서·병렬) |
-| POST | `/api/approval/documents/{id}/submit` | 상신 (이후 결재선 변경 API 거부) |
-| POST | `/api/approval/documents/{id}/recall` | 회수 |
-| POST | `/api/approval/documents/{id}/approve` | `{ lineId, comment? }` — APPROVE/AGREE/POST |
-| POST | `/api/approval/documents/{id}/reject` | `{ lineId, comment }` — APPROVE/AGREE/POST (NOTIFY 불가) |
-| POST | `/api/approval/documents/{id}/acknowledge` | `{ lineId, comment? }` — **NOTIFY 확인** |
-| GET | `/api/approval/inbox` | 결재/합의/후결 PENDING |
-| GET | `/api/approval/notices` | 통보 PENDING/전체 |
+| GET | `/api/approval/documents?box&status&keyword&page&size` | 함별 목록 (`submitted`/`held`/`pending`/`upcoming`/`completed` 등) |
+| GET/POST/PUT/DELETE | `/api/approval/documents` … | 상세·생성·수정·삭제 |
+| POST | `/api/approval/documents/{id}/submit` | 즉시 상신 |
+| POST | `/api/approval/documents/{id}/schedule-submit` | `{ scheduledSubmitAt }` 예약 상신 |
+| POST | `/api/approval/documents/{id}/recall` | 회수 / 예약 취소 |
+| POST | `/api/approval/documents/{id}/approve` | `{ lineId, comment? }` |
+| POST | `/api/approval/documents/{id}/reject` | `{ lineId, comment }` |
+| POST | `/api/approval/documents/{id}/acknowledge` | NOTIFY 확인 |
+| POST | `/api/approval/documents/{id}/hold` | 보류 |
+| POST | `/api/approval/documents/{id}/resume` | 보류 해제 |
+| GET | `/api/approval/notices` | 통보함 |
+| GET | `/api/approval/badges` | 뱃지 카운트 |
+| GET | `/api/users/search` | 결재선 대상 검색 |
+
+스케줄러: `ApprovalScheduleJob` — 도래한 `SCHEDULED` 문서 상신.
 
 ---
 
@@ -309,18 +342,22 @@ flowchart TD
 8. **상신 후** 결재선(순서·인원·유형) 변경 시도 → 400. 순서는 **기안(DRAFT) 작성 시에만**.
 9. 동시성: `version` 또는 line PENDING 조건 갱신.
 10. 비활성 사용자 신규 지정 불가.
+11. 예약 상신 시각은 **현재보다 미래**.
+12. 보류는 NOTIFY에 적용하지 않음(확인만).
 
 ---
 
 ## 12. 수용 기준
 
-- [ ] 제목·내용·첨부로 기안/임시저장/상신
+- [ ] 제목·내용·첨부·결재 종류로 기안/임시저장/상신
+- [ ] 예약 상신(날짜·시간) → SCHEDULED → 도래 시 자동 상신 / 예약 취소
 - [ ] 자기결재 지정 시 검증 실패
 - [ ] 순차·병렬 결재/합의, 후결·통보 규칙 준수
-- [ ] 후결 상신 직후 대기함 노출
+- [ ] 보류함·보류/해제
+- [ ] 6개 함 + 기안 작성 메뉴
 - [ ] 후결 반려 시 REJECTED
 - [ ] REJECTED 문서 재상신 불가, 새 기안만 가능
-- [ ] 기안 작성 화면에서 결재자·합의자 순서 변경·병렬 묶기 후 상신 반영
+- [ ] 기안 작성 전체 너비·병렬(Ctrl) UX
 - [ ] 상신 후 결재선 수정 API/UI 없음
 - [ ] 통보함·ACK, 관련자 외 403
 
@@ -339,16 +376,19 @@ flowchart TD
 | 7 | 통보 시점 | 상신 즉시 |
 | 8 | 통보 확인 | 수동 ACK |
 | 9 | 순서 변경 의미 | **기안 작성 시** 결재자·합의자 순서 |
+| 10 | 함 구성 | 상신/보류/미결/예결/기결/통보 |
+| 11 | 결재 종류 | 일반/대외비/극비/긴급 |
+| 12 | 예약 상신 | 날짜+시간 + 스케줄러 |
 
 ---
 
 ## 14. 구현 단계
 
 1. Liquibase + 첨부 연동 + 메뉴·i18n  
-2. 결재 엔진 (병렬·합의·후결·통보·자기결재 검증)  
-3. API  
-4. 기안 UI (제목/내용/첨부 + 결재·합의 **순서** 빌더)  
-5. 대기함·통보함·상세  
+2. 결재 엔진 (병렬·합의·후결·통보·자기결재·보류)  
+3. API + 예약 상신 잡  
+4. 기안 UI (종류·예약·전체 너비·결재선 빌더)  
+5. 6개 함·상세·뱃지  
 6. 동시성·이력·반려 후 새기안 UX  
 
 ---
@@ -362,3 +402,4 @@ flowchart TD
 | 0.3 | 2026-07-20 | 통보(`NOTIFY`) |
 | 1.0 | 2026-07-20 | 정책 확정 |
 | 1.1 | 2026-07-20 | 순서 변경 = 기안 시 결재·합의 순서만 (상신 후 변경 제외) |
+| 1.2 | 2026-07-21 | 6함·결재종류·예약상신·보류·구현 API/화면 반영 |
