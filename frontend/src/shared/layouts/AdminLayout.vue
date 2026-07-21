@@ -25,7 +25,6 @@ const deviceLabel = computed(() => {
   if (device.value === 'tablet') return 'Tablet'
   return 'Desktop'
 })
-const menuOpen = computed(() => (isCompact.value ? drawerOpen.value : sidebarVisible.value))
 
 function readSidebarVisible() {
   try {
@@ -96,7 +95,19 @@ function toggleNav() {
       :class="{ 'desktop-sidebar--hidden': !sidebarVisible }"
       :width="sidebarVisible ? 'var(--app-sidebar-width)' : '0'"
     >
-      <AppSidebarNav v-show="sidebarVisible" :active-menu="activeMenu" />
+      <AppSidebarNav v-show="sidebarVisible" :active-menu="activeMenu">
+        <template #actions>
+          <el-button
+            class="nav-toggle nav-toggle--sidebar"
+            text
+            :aria-label="tCode('common', 'hideMenu')"
+            :title="tCode('common', 'hideMenu')"
+            @click="toggleNav"
+          >
+            <el-icon :size="20"><Fold /></el-icon>
+          </el-button>
+        </template>
+      </AppSidebarNav>
     </el-aside>
 
     <el-drawer
@@ -107,23 +118,33 @@ function toggleNav() {
       class="nav-drawer"
       append-to-body
     >
-      <AppSidebarNav :active-menu="activeMenu" @navigate="drawerOpen = false" />
+      <AppSidebarNav :active-menu="activeMenu" @navigate="drawerOpen = false">
+        <template #actions>
+          <el-button
+            class="nav-toggle nav-toggle--sidebar"
+            text
+            :aria-label="tCode('common', 'hideMenu')"
+            :title="tCode('common', 'hideMenu')"
+            @click="toggleNav"
+          >
+            <el-icon :size="20"><Fold /></el-icon>
+          </el-button>
+        </template>
+      </AppSidebarNav>
     </el-drawer>
 
     <el-container class="content-shell">
       <el-header class="header" height="var(--app-header-height)">
         <div class="header-left">
           <el-button
-            class="nav-toggle"
+            v-if="isCompact || !sidebarVisible"
+            class="nav-toggle nav-toggle--header"
             text
-            :aria-label="menuOpen ? tCode('common', 'hideMenu') : tCode('common', 'showMenu')"
-            :title="menuOpen ? tCode('common', 'hideMenu') : tCode('common', 'showMenu')"
+            :aria-label="tCode('common', 'showMenu')"
+            :title="tCode('common', 'showMenu')"
             @click="toggleNav"
           >
-            <el-icon :size="22">
-              <Fold v-if="menuOpen" />
-              <Expand v-else />
-            </el-icon>
+            <el-icon :size="22"><Expand /></el-icon>
           </el-button>
           <span v-if="isCompact || !sidebarVisible" class="brand-inline">miniproject</span>
           <el-tag
@@ -236,7 +257,7 @@ function toggleNav() {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
+  padding: 0 12px 0 8px;
   border-bottom: 1px solid var(--app-border-color, #ebeef5);
   background: var(--app-header-bg, #fff);
   overflow: hidden;
@@ -265,6 +286,19 @@ function toggleNav() {
 .user-menu-trigger {
   padding: 4px;
   flex-shrink: 0;
+}
+
+.nav-toggle--sidebar {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.nav-toggle--sidebar:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.nav-toggle--header {
+  margin-left: -4px;
 }
 
 .user-menu-trigger {

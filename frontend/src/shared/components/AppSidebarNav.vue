@@ -16,7 +16,12 @@ function onSelect() {
 
 <template>
   <div class="app-sidebar-nav">
-    <div class="logo">miniproject</div>
+    <div class="logo-row">
+      <div class="logo">miniproject</div>
+      <div v-if="$slots.actions" class="logo-actions">
+        <slot name="actions" />
+      </div>
+    </div>
     <el-menu :default-active="activeMenu" router unique-opened @select="onSelect">
       <SidebarMenuNode
         v-for="menu in menuStore.menus"
@@ -35,11 +40,29 @@ function onSelect() {
   background: var(--app-sidebar-bg, #1f2d3d);
 }
 
+.logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: var(--app-header-height, 56px);
+  padding: 0 8px 0 16px;
+  flex-shrink: 0;
+}
+
 .logo {
-  padding: 20px;
   font-size: 18px;
   font-weight: 700;
   color: #fff;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logo-actions {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
 }
 
